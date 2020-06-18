@@ -18,6 +18,16 @@ enum UIAlignment: Int {
     case trailing
 }
 
+// Actively avoid subclassing since that would obscure the type
+// but persisting metadata does present challenges
+
+// Be careful to avoid extension naming conventions that might collide
+// we user specific use cases
+
+// Solution?
+// let foo = objc_getAssociatedObject(self, &AssociatedProperties.foo) as? String
+// objc_setAssociatedObject(self, &AssociatedProperties.foo, value, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+
 // SwiftUI extensions on UIView
 extension UIView {
     @discardableResult
@@ -197,6 +207,7 @@ extension UITextField {
         return self
     }
 
+    // SWiftUI avoids the setter/getter impl, change to secure(_ isSecure: Bool)
     var secure: Bool {
         get {
             self.isSecureTextEntry
@@ -248,6 +259,7 @@ extension UITextView {
 
 // SwiftUI extensions on UIStackView
 extension UIStackView {
+    // viewBuilder
     var views: [UIView] {
         get {
             self.arrangedSubviews
@@ -259,6 +271,7 @@ extension UIStackView {
         }
     }
 
+    // remove this
     var add: UIView {
         get {
             self
@@ -267,7 +280,15 @@ extension UIStackView {
             self.addArrangedSubview(view)
         }
     }
+    
+    // spacing -> view.distribution
 
+    // alignment -> view.alignment
+    // but alignement is already defined on UIStackView, need to persist the setting and
+    // provide a close enough API
+    // func align() -> Self {}
+    
+    // handle via willMove(toSuperview:)
     @discardableResult
     func constrain(_ alignment: UIAlignment, superview: UIView) -> Self {
         switch alignment {
