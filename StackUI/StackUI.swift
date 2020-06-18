@@ -18,11 +18,16 @@ enum UIAlignment: Int {
     case trailing
 }
 
-// Actively avoid subclassing since that would obscure the type
-// but persisting metadata does present challenges
+// Avoid subclassing since that would create new types and add
+// friction to the piecemeal adoption strategy
+
+// SwiftUI has a "chained method" style syntax that allows use to avoid
+// most (not all) namespace collisions
 
 // Be careful to avoid extension naming conventions that might collide
 // we user specific use cases
+
+// Persisting metadata does present challenges
 
 // Solution?
 // let foo = objc_getAssociatedObject(self, &AssociatedProperties.foo) as? String
@@ -60,6 +65,11 @@ extension UIView {
         }
         self.frame = frame
         return self
+    }
+    
+    @discardableResult
+    func opacity(_ opacity: CGFloat) -> Self {
+        self.opacity = opacity
     }
 }
 
