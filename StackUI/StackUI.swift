@@ -321,6 +321,16 @@ extension UIStackView {
     }
 }
 
+protocol ListController {
+    @discardableResult
+    func row(at: Int) -> UITableViewCell {
+        
+    }
+    
+    func selected(at: Int) {
+    }
+}
+
 // SwiftUI support for action closures
 class UIAction: NSObject {
     static var actions: [UIControl: () -> Void] = [:]
@@ -352,11 +362,13 @@ struct UI {
     
     static func Image(_ named: String) -> UIImage {
         let image = UIImage(named: named) ?? UIImage()
+        image.translatesAutoresizingMaskIntoConstraints = false
         return image
     }
 
     static func Button(_ title: String, action: @escaping () -> Void) -> UIButton {
         let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle(title, for: .normal)
         UIAction.register(button, event: .touchUpInside, action: action)
         return button
@@ -364,6 +376,7 @@ struct UI {
 
     static func Checkbox(action: (() -> Void)? = nil) -> UIButton {
         let button = UIButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
         button.frame(height: 44, width: 44)
         button.setImage(Image("checkbox-off"), for: .normal)
         button.setImage(Image("checkbox-on"), for: .selected)
@@ -374,21 +387,38 @@ struct UI {
         button.isSelected = false
         return button
     }
+    
+    // Deviates from the SwiftUI observer based implenentation
+    static func List(_ data: [AnyObject]) -> UITableView {
+        let tableView = UITableView(frame: .zero)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        return tableView
+    }
 
+    // Deviates from the SwiftUI observer based implenentation
+    static func ListCell() -> UITableViewCell {
+        let tableViewCell = UITableViewCell(frame: .zero)
+        tableViewCell.translatesAutoresizingMaskIntoConstraints = false
+        return tableViewCell
+    }
+    
     static func Text(_ text: String) -> UILabel {
         let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
         label.text = text
         return label
     }
 
     static func TextField(_ text: String? = nil) -> UITextField {
         let textField = UITextField()
+        textField.translatesAutoresizingMaskIntoConstraints = false
         textField.text = text
         return textField
     }
 
     static func SecureField(_ text: String? = nil) -> UITextField {
         let textView = UITextField()
+        textView.translatesAutoresizingMaskIntoConstraints = false
         textView.isSecureTextEntry = true
         textView.text = text
         return textView
