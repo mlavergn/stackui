@@ -390,6 +390,18 @@ struct UI {
         return view
     }
     
+    static func Stepper() -> UIStepper {
+        let stepper = UIStepper()
+        stepper.translatesAutoresizingMaskIntoConstraints = false
+        return stepper
+    }
+    
+    static func Toggle() -> UISwitch {
+        let switch = UISwitch()
+        switch.translatesAutoresizingMaskIntoConstraints = false
+        return switch
+    }
+    
     static func VStack(alignment: UIStackView.Alignment = .fill, body: (UIStackView) -> Void) -> UIStackView {
         let view = UIStackView()
         view.translatesAutoresizingMaskIntoConstraints = false
