@@ -10,11 +10,12 @@ import UIKit
 
 /// StackUI
 ///
-/// A SwiftUI-like set of helpers and externsions to approximate SwiftUI for emperical use cases
+/// A SwiftUI-like set of wrappers that approximate SwiftUI for emperical uses
 ///
 /// Architecture:
 /// - Enable piecemeal adoption of SwiftUI paradigms
 /// - Prefer extensions to subclassing to avoid imposing new base view types
+///   - In hindsight, this is too simplistic, we will need to subclass
 ///   - List view could not be made to fit this pattern
 /// - Avoid non-SwiftUI naming conventions to minimize collisions with adopter use cases
 /// - Relying on extensions limits adding properties so rely on objc_getAssociatedObject / objc_setAssociatedObject
@@ -388,6 +389,7 @@ final class List: UITableView {
     }
 }
 
+// SwiftUI rename to Coordinator
 // SwiftUI exception (tbd)
 final class ListController: UITableViewController {
     var data: [Any] = []
@@ -491,6 +493,7 @@ struct UI {
         return imageView
     }
 
+    // TODO needs to support a stack view as the label, most UIControls will have to
     static func Button(_ title: String, action: @escaping (UIEvent) -> Void) -> UIButton {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -591,4 +594,17 @@ struct UI {
         body(view)
         return view
     }
+    
+    // TODO
+    
+    // Form - UITableView with sections?
+    // Picker - pickerStyle(.radioGroup)
+    // Divider
+    // Environment
+    // - colorScheme - .dark : .light
+    // - contentSize - .large : .axLarge : .small
+    // - locale - en_US
+    // NavigationView / NavigationLink
+    
+    // View property "chained" calls propagate based on the call order and the nesting order
 }
