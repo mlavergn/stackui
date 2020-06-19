@@ -8,7 +8,23 @@
 
 import UIKit
 
-// SwiftUI style alignment specifiers
+/// StackUI
+///
+/// A SwiftUI-like set of helpers and externsions to approximate SwiftUI for emperical use cases
+///
+/// Architecture:
+/// - Enable piecemeal adoption of SwiftUI paradigms
+/// - Prefer extensions to subclassing to avoid imposing new base view types
+///   - List view could not be made to fit this pattern
+/// - Avoid non-SwiftUI naming conventions to minimize collisions with adopter use cases
+/// - Relying on extensions limits adding properties so rely on objc_getAssociatedObject / objc_setAssociatedObject
+///
+/// Style:
+/// - SwiftUI uses a "call chaining" pattern, although a misnomer, as declarative syntax
+/// - SwiftUI eschews setter/getter patterns
+///
+
+/// SwiftUI style alignment specifiers
 enum UIAlignment: Int {
     case vertical
     case horizontal
@@ -16,28 +32,17 @@ enum UIAlignment: Int {
     case leading
     case top
     case trailing
+    case all
 }
 
-// Avoid subclassing since that would create new types and add
-// friction to the piecemeal adoption strategy
-
-// SwiftUI has a "chained method" style syntax that allows use to avoid
-// most (not all) namespace collisions
-
-// Be careful to avoid extension naming conventions that might collide
-// we user specific use cases
-
-// Persisting metadata does present challenges
-
-// Solution?
-// let foo = objc_getAssociatedObject(self, &AssociatedProperties.foo) as? String
-// objc_setAssociatedObject(self, &AssociatedProperties.foo, value, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-
-// SwiftUI extensions on UIView
+/// SwiftUI extensions on UIView
 extension UIView {
     @discardableResult
-    func background(_ color: UIColor) -> Self {
+    func background(_ color: UIColor, cornerRadius radius: CGFloat? = nil) -> Self {
         self.backgroundColor = color
+        if let radius = radius {
+            self.cornerRadius(radius)
+        }
         return self
     }
 
@@ -68,21 +73,13 @@ extension UIView {
     }
     
     @discardableResult
-    func opacity(_ opacity: CGFloat) -> Self {
-        self.opacity = opacity
-    }
-}
-
-// SwiftUI extensions on UIButton padding
-extension UIButton {
-    @discardableResult
-    func foregroundColor(_ color: UIColor) -> Self {
-        self.titleLabel?.textColor = color
+    func opacity(_ opacity: Float) -> Self {
+        self.layer.opacity = opacity
         return self
     }
 }
 
-// SwiftUI extensions on UIView padding
+/// SwiftUI extensions on UIView padding
 extension UIView {
     @discardableResult
     func padding(_ axis: UIAlignment, _ inset: CGFloat) -> Self {
@@ -102,6 +99,11 @@ extension UIView {
             insets.top = inset
         case .trailing:
             insets.right = inset
+        case .all:
+            insets.right = inset
+            insets.left = inset
+            insets.top = inset
+            insets.bottom = inset
         }
         self.layoutMargins = insets
         return self
@@ -128,7 +130,28 @@ extension UIView {
     }
 }
 
-// SwiftUI extensions on UITextView
+/// SwiftUI extensions on UIButton
+extension UIButton {
+    @discardableResult
+    func font(_ font: UIFont) -> Self {
+        self.titleLabel?.font = font
+        return self
+    }
+    
+    @discardableResult
+    func font(_ style: UIFont.TextStyle) -> Self {
+        self.titleLabel?.font = UIFont.preferredFont(forTextStyle: style)
+        return self
+    }
+    
+    @discardableResult
+    func foregroundColor(_ color: UIColor) -> Self {
+        self.titleLabel?.textColor = color
+        return self
+    }
+}
+
+/// SwiftUI extensions on UITextView
 extension UILabel {
     @discardableResult
     func alignment(_ alignment: NSTextAlignment) -> Self {
@@ -161,7 +184,7 @@ extension UILabel {
     }
 }
 
-// SwiftUI extensions on UITextField
+/// SwiftUI extensions on UITextField
 extension UITextField {
     @discardableResult
     func alignment(_ alignment: NSTextAlignment) -> Self {
@@ -217,7 +240,7 @@ extension UITextField {
         return self
     }
 
-    // SWiftUI avoids the setter/getter impl, change to secure(_ isSecure: Bool)
+    // SwiftUI exception
     var secure: Bool {
         get {
             self.isSecureTextEntry
@@ -234,7 +257,7 @@ extension UITextField {
     }
 }
 
-// SwiftUI extensions on UITextView
+/// SwiftUI extensions on UITextView
 extension UITextView {
     @discardableResult
     func alignment(_ alignment: NSTextAlignment) -> Self {
@@ -267,7 +290,7 @@ extension UITextView {
     }
 }
 
-// SwiftUI extensions on UIStackView
+/// SwiftUI extensions on UIStackView
 extension UIStackView {
     // viewBuilder
     var views: [UIView] {
@@ -281,22 +304,18 @@ extension UIStackView {
         }
     }
 
-    // remove this
-    var add: UIView {
-        get {
-            self
-        }
-        set(view) {
-            self.addArrangedSubview(view)
-        }
+    @discardableResult
+    func spacing(_ spacing: UIStackView.Distribution = .fillProportionally) -> Self {
+        self.distribution = spacing
+        return self
     }
-    
-    // spacing -> view.distribution
 
-    // alignment -> view.alignment
-    // but alignement is already defined on UIStackView, need to persist the setting and
-    // provide a close enough API
-    // func align() -> Self {}
+    // alignment is already defined on UIStackView
+    @discardableResult
+    func align(_ alignment: UIStackView.Alignment = .center) -> Self {
+        self.alignment = alignment
+        return self
+    }
     
     // handle via willMove(toSuperview:)
     @discardableResult
@@ -316,42 +335,148 @@ extension UIStackView {
             self.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor).isActive = true
         case .trailing:
             self.trailingAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.trailingAnchor).isActive = true
+        case .all:
+            self.topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor).isActive = true
+            self.bottomAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.bottomAnchor).isActive = true
+            self.leadingAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.leadingAnchor).isActive = true
+            self.trailingAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.trailingAnchor).isActive = true
         }
         return self
     }
 }
 
-protocol ListController {
-    @discardableResult
-    func row(at: Int) -> UITableViewCell {
+// SwiftUI style List
+final class List: UITableView {
+    var controller: ListController?
+    var cellHandler: (Any) -> UIView = { _ in
+        return UIView()
+    }
+
+    init(_ data: [AnyObject]) {
+        super.init(frame: .zero, style: .plain)
+        self.translatesAutoresizingMaskIntoConstraints = false
         
+        let listController = ListController()
+        listController.data = data
+        self.dataSource = listController
+        self.delegate = listController
+        self.register(UITableViewCell.self, forCellReuseIdentifier: listController.cellId)
+        // created the controller, so hold a reference
+        controller = listController
     }
     
-    func selected(at: Int) {
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    @discardableResult
+    func ForEach(_ handler: @escaping (Any) -> UIView) -> Self {
+        cellHandler = handler
+        return self
+    }
+    
+    /// UIStackViews compress scrollviews, so re-anchor once added as a subview
+    override func didMoveToSuperview() {
+        if let superview = self.superview {
+            self.widthAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.widthAnchor).isActive = true
+        }
+    }
+
+    /// map the optimal intrinsic size to the content size
+    override var intrinsicContentSize: CGSize {
+        return contentSize
     }
 }
 
-// SwiftUI support for action closures
-class UIAction: NSObject {
-    static var actions: [UIControl: () -> Void] = [:]
-
-    static func register(_ control: UIControl, event: UIControl.Event, action: @escaping () -> Void) {
-        Self.actions[control] = action
-        control.addTarget(self, action: #selector(handle), for: event)
+// SwiftUI exception (tbd)
+final class ListController: UITableViewController {
+    var data: [Any] = []
+    let cellId: String = "cell"
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
     }
 
-    static func deregister(_ control: UIControl) {
-        Self.actions.removeValue(forKey: control)
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return data.count
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        // bridge back
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
+        if let list = tableView as? List {
+            // not optimal, find a pattern for reuse
+            let view = list.cellHandler(data[indexPath.row])
+            cell.addSubview(view)
+        }
+        return cell
+    }
+}
+
+/// SwiftUI support for action closures
+/// Measurable amount of abstractions and magic here, need to cover the entire code block with tests
+extension UIControl {
+    
+    /// Inspect view state for the given UIEvent and return an appropriate UIControl.Event
+    /// - Parameter event: UIEvent to attempt to convert
+    /// - Returns: UIControl.Event
+    private func uiEventToControlEvent(_ event: UIEvent) -> UIControl.Event {
+        // non-UIButton actions will typically have a nil UIEvent
+        guard let touch = event.allTouches?.first else {
+            return .primaryActionTriggered
+        }
+        let isInside = self.bounds.contains(touch.location(in: self))
+        let wasInside = self.bounds.contains(touch.previousLocation(in: self))
+        // let isEdit = self.isKind(of: UITextField.self)
+        // TODO support editting events
+        switch touch.phase {
+        case .began:
+            return touch.tapCount > 1 ? .touchDownRepeat : .touchDown
+        case .moved:
+            switch (wasInside, isInside) {
+            case (true, true):
+                return .touchDragInside
+            case (false, true):
+                return .touchDragEnter
+            case (true, false):
+                return .touchDragExit
+            case (false, false):
+                return .touchDragOutside
+            }
+        case .ended:
+            return isInside ? .touchUpInside : .touchUpOutside
+        case .cancelled:
+            return .touchCancel
+        case .stationary:
+            return .primaryActionTriggered
+        @unknown default:
+            return .primaryActionTriggered
+        }
+    }
+    
+    private struct AssociatedObjects {
+        static var events: [UInt: (UIEvent) -> Void] = [:]
     }
 
+    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+        var events = objc_getAssociatedObject(self, &AssociatedObjects.events) as? [UInt: (UIEvent) -> Void] ?? [:]
+        events[event.rawValue] = action
+        objc_setAssociatedObject(self, &AssociatedObjects.events, events, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        self.addTarget(self, action: #selector(handler), for: event)
+    }
+    
     @objc
-    static func handle(_ sender: UIControl) {
-        // lookup the sender and call the stored closure
-        actions[sender]?()
+    func handler(_ sender: UIControl, forEvent event: UIEvent) {
+        let events = objc_getAssociatedObject(sender, &AssociatedObjects.events) as? [UInt: (UIEvent) -> Void]
+        let controlEvent = uiEventToControlEvent(event)
+        events?[controlEvent.rawValue]?(event)
     }
 }
 
-// SwiftUI style constructors
+// SwiftUI constructors
 struct UI {
     static func Alert(title: String, message: String, dismissButton: String) -> UIAlertController {
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -360,46 +485,32 @@ struct UI {
         return alertController
     }
     
-    static func Image(_ named: String) -> UIImage {
-        let image = UIImage(named: named) ?? UIImage()
-        image.translatesAutoresizingMaskIntoConstraints = false
-        return image
+    static func Image(_ named: String) -> UIImageView {
+        let image = UIImage(named: named)
+        let imageView = UIImageView(image: image)
+        return imageView
     }
 
-    static func Button(_ title: String, action: @escaping () -> Void) -> UIButton {
+    static func Button(_ title: String, action: @escaping (UIEvent) -> Void) -> UIButton {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.setTitle(title, for: .normal)
-        UIAction.register(button, event: .touchUpInside, action: action)
+        button.event(.touchUpInside, action: action)
         return button
     }
 
-    static func Checkbox(action: (() -> Void)? = nil) -> UIButton {
+    static func Checkbox(action: ((Bool) -> Void)? = nil) -> UIButton {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.frame(height: 44, width: 44)
-        button.setImage(Image("checkbox-off"), for: .normal)
-        button.setImage(Image("checkbox-on"), for: .selected)
-        UIAction.register(button, event: .touchUpInside) {
+        button.setImage(UIImage(named: "checkbox-off"), for: .normal)
+        button.setImage(UIImage(named: "checkbox-on"), for: .selected)
+        button.event(.touchUpInside) { _ in
             button.isSelected = !button.isSelected
-            action?()
+            action?(button.isSelected)
         }
         button.isSelected = false
         return button
-    }
-    
-    // Deviates from the SwiftUI observer based implenentation
-    static func List(_ data: [AnyObject]) -> UITableView {
-        let tableView = UITableView(frame: .zero)
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        return tableView
-    }
-
-    // Deviates from the SwiftUI observer based implenentation
-    static func ListCell() -> UITableViewCell {
-        let tableViewCell = UITableViewCell(frame: .zero)
-        tableViewCell.translatesAutoresizingMaskIntoConstraints = false
-        return tableViewCell
     }
     
     static func Text(_ text: String) -> UILabel {
@@ -430,42 +541,52 @@ struct UI {
         return view
     }
     
-    static func Stepper() -> UIStepper {
+    static func Stepper(in range: ClosedRange<Double>, action: @escaping (Double) -> Void) -> UIStepper {
         let stepper = UIStepper()
         stepper.translatesAutoresizingMaskIntoConstraints = false
+        stepper.minimumValue = range.lowerBound
+        stepper.maximumValue = range.upperBound
+        stepper.event(.primaryActionTriggered) { _ in
+            action(stepper.value)
+        }
         return stepper
     }
     
-    static func Toggle() -> UISwitch {
-        let switch = UISwitch()
-        switch.translatesAutoresizingMaskIntoConstraints = false
-        return switch
+    static func Toggle(isOn: Bool, action: @escaping (Bool) -> Void) -> UISwitch {
+        let toggle = UISwitch()
+        toggle.translatesAutoresizingMaskIntoConstraints = false
+        toggle.isOn = isOn
+        toggle.event(.primaryActionTriggered) { _ in
+            action(toggle.isOn)
+        }
+        return toggle
     }
-    
-    static func VStack(alignment: UIStackView.Alignment = .fill, body: (UIStackView) -> Void) -> UIStackView {
+
+    static func VStack(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) -> UIStackView {
         let view = UIStackView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.axis = .vertical
-        view.distribution = .fill
+        view.distribution = .fillProportionally
         view.alignment = alignment
         body(view)
         return view
     }
 
-    static func HStack(alignment: UIStackView.Alignment = .fill, body: (UIStackView) -> Void) -> UIStackView {
+    static func HStack(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) -> UIStackView {
         let view = UIStackView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.axis = .horizontal
-        view.distribution = .fill
+        view.distribution = .fillProportionally
         view.alignment = alignment
         body(view)
         return view
     }
 
-    static func ZStack(alignment: UIStackView.Alignment = .fill, body: (UIStackView) -> Void) -> UIStackView {
+    static func ZStack(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) -> UIStackView {
         let view = UIStackView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.axis = .horizontal
+        view.distribution = .fillEqually
         view.alignment = alignment
         body(view)
         return view

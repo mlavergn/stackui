@@ -16,8 +16,7 @@ class ViewController: UIViewController {
 
         let view = demoStackUI()
         self.view.addSubview(view)
-        view.constrain(.top, superview: self.view)
-        view.constrain(.horizontal, superview: self.view)
+        view.constrain(.all, superview: self.view)
     }
     
     func demoStackView() -> UIStackView {
@@ -56,15 +55,17 @@ class ViewController: UIViewController {
             .clearButton(.whileEditing)
             .clears(true)
 
-        let showPassword = UI.Checkbox(action: {
+        let showPassword = UI.Checkbox() { _ in
             password.secure = !password.secure
-        })
+        }
         let showPasswordLabel = UI.Text("Show Password").font(.caption1)
         
-        let enableFaceID = UI.Checkbox()
+        let enableFaceID = UI.Checkbox() { selected in
+            print(selected)
+        }
         let enableFaceIDLabel = UI.Text("Enable Face ID").font(.caption1)
 
-        let login = UI.Button("Sign In") {
+        let login = UI.Button("Sign In") { _ in
             let usernameText = username.text ?? ""
             let passwordText = password.text ?? ""
             let json = "{\"username\":\"\(usernameText)\",\"password\":\"\(passwordText)\"}"
@@ -75,12 +76,29 @@ class ViewController: UIViewController {
         .cornerRadius(10)
         .padding(.horizontal, 20)
         
-        let forgot = UI.Button("Forgot Password?") {
+        let forgot = UI.Button("Forgot Password?") { _ in
             let alert = UI.Alert(title: "Forgot", message: "Try to remember!", dismissButton: "OK")
             self.present(alert, animated: true, completion: nil)
         }
         .foregroundColor(.blue)
         .padding()
+
+        let toggle = UI.Toggle(isOn: false) { selected in
+            print(selected)
+        }
+
+        let stepper = UI.Stepper(in: 1...10) { value in
+            print(value)
+        }
+        
+        let list = List(["hello", "world", "demo", "test", "foo", "bar"] as [AnyObject])
+        list.ForEach { data in
+            return UI.HStack { body in
+                body.views = [
+                    UI.Text(data as? String ?? "").font(.subheadline).foregroundColor(.blue)
+                ]
+            }
+        }
 
         let view = UI.VStack { body in
             body.views = [
@@ -103,6 +121,9 @@ class ViewController: UIViewController {
                 UI.Spacer(),
                 login,
                 forgot,
+                toggle,
+                stepper,
+                list,
             ]
         }.padding()
         
