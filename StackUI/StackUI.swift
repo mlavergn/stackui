@@ -419,13 +419,11 @@ final class ListController: UITableViewController {
 }
 
 /// SwiftUI support for action closures
-/// Measurable amount of abstractions and magic here, need to cover the entire code block with tests
 extension UIControl {
-    
     /// Inspect view state for the given UIEvent and return an appropriate UIControl.Event
     /// - Parameter event: UIEvent to attempt to convert
     /// - Returns: UIControl.Event
-    private func uiEventToControlEvent(_ event: UIEvent) -> UIControl.Event {
+    func uiEventToControlEvent(_ event: UIEvent) -> UIControl.Event {
         // non-UIButton actions will typically have a nil UIEvent
         guard let touch = event.allTouches?.first else {
             return .primaryActionTriggered
@@ -454,147 +452,213 @@ extension UIControl {
             return .touchCancel
         case .stationary:
             return .primaryActionTriggered
-        @unknown default:
+        default:
             return .primaryActionTriggered
         }
-    }
-    
-    private struct AssociatedObjects {
-        static var events: [UInt: (UIEvent) -> Void] = [:]
-    }
-
-    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
-        var events = objc_getAssociatedObject(self, &AssociatedObjects.events) as? [UInt: (UIEvent) -> Void] ?? [:]
-        events[event.rawValue] = action
-        objc_setAssociatedObject(self, &AssociatedObjects.events, events, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        self.addTarget(self, action: #selector(handler), for: event)
-    }
-    
-    @objc
-    func handler(_ sender: UIControl, forEvent event: UIEvent) {
-        let events = objc_getAssociatedObject(sender, &AssociatedObjects.events) as? [UInt: (UIEvent) -> Void]
-        let controlEvent = uiEventToControlEvent(event)
-        events?[controlEvent.rawValue]?(event)
     }
 }
 
 // SwiftUI constructors
-struct UI {
-    static func Alert(title: String, message: String, dismissButton: String) -> UIAlertController {
-        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+
+class Alert: UIAlertController {
+	convenience init(title: String, message: String, dismissButton: String) {
+		self.init(title: title, message: message, preferredStyle: .alert)
         let defaultAction = UIAlertAction(title: dismissButton, style: .default, handler: nil)
-        alertController.addAction(defaultAction)
-        return alertController
+        self.addAction(defaultAction)
     }
-    
-    static func Image(_ named: String) -> UIImageView {
+}
+	
+class Image: UIImageView {
+    convenience init(_ named: String) {
         let image = UIImage(named: named)
-        let imageView = UIImageView(image: image)
-        return imageView
+		self.init(image: image)
     }
+}
 
-    // TODO needs to support a stack view as the label, most UIControls will have to
-    static func Button(_ title: String, action: @escaping (UIEvent) -> Void) -> UIButton {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(title, for: .normal)
-        button.event(.touchUpInside, action: action)
-        return button
+class Button: UIButton {
+	var events: [UInt: (UIEvent) -> Void] = [:]
+
+	// TODO needs to support a stack view as the label, most UIControls will have to
+    convenience init(_ title: String, action: @escaping (UIEvent) -> Void) {
+		self.init(type: .system)
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.setTitle(title, for: .normal)
+        self.event(.touchUpInside, action: action)
     }
+	
+    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+        events[event.rawValue] = action
+        self.addTarget(self, action: #selector(handler), for: event)
+    }
+	
+    @objc
+    func handler(_ sender: UIControl, forEvent event: UIEvent) {
+        let controlEvent = uiEventToControlEvent(event)
+		events[controlEvent.rawValue]?(event)
+    }
+}
 
-    static func Checkbox(action: ((Bool) -> Void)? = nil) -> UIButton {
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.frame(height: 44, width: 44)
-        button.setImage(UIImage(named: "checkbox-off"), for: .normal)
-        button.setImage(UIImage(named: "checkbox-on"), for: .selected)
-        button.event(.touchUpInside) { _ in
-            button.isSelected = !button.isSelected
-            action?(button.isSelected)
+class Checkbox: UIButton {
+	var events: [UInt: (UIEvent) -> Void] = [:]
+
+    convenience init(action: ((Bool) -> Void)? = nil) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.frame(height: 44, width: 44)
+        self.setImage(UIImage(named: "checkbox-off"), for: .normal)
+        self.setImage(UIImage(named: "checkbox-on"), for: .selected)
+        self.event(.touchUpInside) { _ in
+            self.isSelected = !self.isSelected
+            action?(self.isSelected)
         }
-        button.isSelected = false
-        return button
-    }
-    
-    static func Text(_ text: String) -> UILabel {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = text
-        return label
+        self.isSelected = false
     }
 
-    static func TextField(_ text: String? = nil) -> UITextField {
-        let textField = UITextField()
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        textField.text = text
-        return textField
+    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+        events[event.rawValue] = action
+        self.addTarget(self, action: #selector(handler), for: event)
     }
+	
+    @objc
+    func handler(_ sender: UIControl, forEvent event: UIEvent) {
+        let controlEvent = uiEventToControlEvent(event)
+		events[controlEvent.rawValue]?(event)
+    }
+}
 
-    static func SecureField(_ text: String? = nil) -> UITextField {
-        let textView = UITextField()
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.isSecureTextEntry = true
-        textView.text = text
-        return textView
+class Text: UILabel {
+	convenience init(_ text: String) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.text = text
     }
+}
 
-    static func Spacer() -> UIView {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
+class TextField: UITextField {
+	convenience init(_ text: String? = nil) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.text = text
     }
-    
-    static func Stepper(in range: ClosedRange<Double>, action: @escaping (Double) -> Void) -> UIStepper {
-        let stepper = UIStepper()
-        stepper.translatesAutoresizingMaskIntoConstraints = false
-        stepper.minimumValue = range.lowerBound
-        stepper.maximumValue = range.upperBound
-        stepper.event(.primaryActionTriggered) { _ in
-            action(stepper.value)
+}
+
+class SecureField: UITextField {
+	convenience init(_ text: String? = nil) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.isSecureTextEntry = true
+        self.text = text
+    }
+}
+
+class Spacer: UIView {
+	convenience init() {
+		self.init(frame: .zero)
+		self.translatesAutoresizingMaskIntoConstraints = false
+    }
+}
+
+class Stepper: UIStepper {
+	var events: [UInt: (UIEvent) -> Void] = [:]
+
+	convenience init(in range: ClosedRange<Double>, action: @escaping (Double) -> Void) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.minimumValue = range.lowerBound
+        self.maximumValue = range.upperBound
+        self.event(.primaryActionTriggered) { _ in
+            action(self.value)
         }
-        return stepper
     }
-    
-    static func Toggle(isOn: Bool, action: @escaping (Bool) -> Void) -> UISwitch {
-        let toggle = UISwitch()
-        toggle.translatesAutoresizingMaskIntoConstraints = false
-        toggle.isOn = isOn
-        toggle.event(.primaryActionTriggered) { _ in
-            action(toggle.isOn)
+	
+    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+        events[event.rawValue] = action
+        self.addTarget(self, action: #selector(handler), for: event)
+    }
+	
+    @objc
+    func handler(_ sender: UIControl, forEvent event: UIEvent) {
+        let controlEvent = uiEventToControlEvent(event)
+		events[controlEvent.rawValue]?(event)
+    }
+}
+
+class Toggle: UISwitch {
+	var events: [UInt: (UIEvent) -> Void] = [:]
+
+	convenience init(isOn: Bool, action: @escaping (Bool) -> Void) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.isOn = isOn
+        self.event(.primaryActionTriggered) { _ in
+            action(self.isOn)
         }
-        return toggle
     }
+	
+    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+        events[event.rawValue] = action
+        self.addTarget(self, action: #selector(handler), for: event)
+    }
+	
+    @objc
+    func handler(_ sender: UIControl, forEvent event: UIEvent) {
+        let controlEvent = uiEventToControlEvent(event)
+		events[controlEvent.rawValue]?(event)
+    }
+}
 
-    static func VStack(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) -> UIStackView {
-        let view = UIStackView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.axis = .vertical
-        view.distribution = .fillProportionally
-        view.alignment = alignment
-        body(view)
-        return view
+class VStack: UIStackView {
+	convenience init(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.axis = .vertical
+        self.distribution = .fillProportionally
+        self.alignment = alignment
+        body(self)
     }
+}
 
-    static func HStack(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) -> UIStackView {
-        let view = UIStackView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.axis = .horizontal
-        view.distribution = .fillProportionally
-        view.alignment = alignment
-        body(view)
-        return view
+class HStack: UIStackView {
+	convenience init(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) {
+		self.init()
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.axis = .horizontal
+        self.distribution = .fillProportionally
+        self.alignment = alignment
+        body(self)
     }
+}
 
-    static func ZStack(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) -> UIStackView {
-        let view = UIStackView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.axis = .horizontal
-        view.distribution = .fillEqually
-        view.alignment = alignment
-        body(view)
-        return view
-    }
-    
+class ZStack: UIStackView {
+	convenience init(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) {
+		self.init()
+		self.translatesAutoresizingMaskIntoConstraints = false
+		self.axis = .horizontal
+		self.distribution = .fillEqually
+		self.alignment = alignment
+		body(self)
+	}
+}
+
+class ObservedObject<T>: NSObject {
+	@objc dynamic var value: Any?
+
+	var wrappedValue: T? {
+		didSet {
+			self.value = wrappedValue
+		}
+	}
+	
+	func projectedValue(_ handler: @escaping (ObservedObject<T>, NSKeyValueObservedChange<Any?>) -> Void) -> NSKeyValueObservation? {
+		return observe(\.self.value, options: [.old, .new], changeHandler: handler)
+	}
+	
+	func update() {
+		// called prior to rendering
+	}
+}
+
+
     // TODO
     
     // Form - UITableView with sections?
@@ -607,4 +671,3 @@ struct UI {
     // NavigationView / NavigationLink
     
     // View property "chained" calls propagate based on the call order and the nesting order
-}

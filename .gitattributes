@@ -1,3 +1,4 @@
 * linguist-language=Swift
 *.png binary
+*.pdf binary
 *.afdesign binary

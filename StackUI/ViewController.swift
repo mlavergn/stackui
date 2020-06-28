@@ -39,33 +39,33 @@ class ViewController: UIViewController {
     }
 
     func demoStackUI() -> UIStackView {
-        let usernameLabel = UI.Text("Email").font(.caption1)
-        let username = UI.TextField()
+        let usernameLabel = Text("Email").font(.caption1)
+        let username = TextField()
             .placeholderText("Email")
             .disableAutocorrection(true)
             .autocapitalization(.none)
             .clearButton(.whileEditing)
             .clears(true)
 
-        let passwordLabel = UI.Text("Password").font(.caption1)
-        let password = UI.SecureField()
+        let passwordLabel = Text("Password").font(.caption1)
+        let password = SecureField()
             .placeholderText("Password")
             .disableAutocorrection(true)
             .autocapitalization(.none)
             .clearButton(.whileEditing)
             .clears(true)
 
-        let showPassword = UI.Checkbox() { _ in
+        let showPassword = Checkbox() { _ in
             password.secure = !password.secure
         }
-        let showPasswordLabel = UI.Text("Show Password").font(.caption1)
+        let showPasswordLabel = Text("Show Password").font(.caption1)
         
-        let enableFaceID = UI.Checkbox() { selected in
+        let enableFaceID = Checkbox() { selected in
             print(selected)
         }
-        let enableFaceIDLabel = UI.Text("Enable Face ID").font(.caption1)
+        let enableFaceIDLabel = Text("Enable Face ID").font(.caption1)
 
-        let login = UI.Button("Sign In") { _ in
+        let login = Button("Sign In") { _ in
             let usernameText = username.text ?? ""
             let passwordText = password.text ?? ""
             let json = "{\"username\":\"\(usernameText)\",\"password\":\"\(passwordText)\"}"
@@ -76,49 +76,49 @@ class ViewController: UIViewController {
         .cornerRadius(10)
         .padding(.horizontal, 20)
         
-        let forgot = UI.Button("Forgot Password?") { _ in
-            let alert = UI.Alert(title: "Forgot", message: "Try to remember!", dismissButton: "OK")
+        let forgot = Button("Forgot Password?") { _ in
+            let alert = Alert(title: "Forgot", message: "Try to remember!", dismissButton: "OK")
             self.present(alert, animated: true, completion: nil)
         }
         .foregroundColor(.blue)
         .padding()
 
-        let toggle = UI.Toggle(isOn: false) { selected in
+        let toggle = Toggle(isOn: false) { selected in
             print(selected)
         }
 
-        let stepper = UI.Stepper(in: 1...10) { value in
+        let stepper = Stepper(in: 1...10) { value in
             print(value)
         }
         
         let list = List(["hello", "world", "demo", "test", "foo", "bar"] as [AnyObject])
         list.ForEach { data in
-            return UI.HStack { body in
+            return HStack { body in
                 body.views = [
-                    UI.Text(data as? String ?? "").font(.subheadline).foregroundColor(.blue)
+                    Text(data as? String ?? "").font(.subheadline).foregroundColor(.blue)
                 ]
             }
         }
 
-        let view = UI.VStack { body in
+        let view = VStack { body in
             body.views = [
                 usernameLabel,
                 username,
-                UI.Spacer(),
+                Spacer(),
                 passwordLabel,
                 password,
-                UI.Spacer(),
-                UI.HStack { body in
+                Spacer(),
+                HStack { body in
                     body.views = [
                         showPassword,
                         showPasswordLabel,
-                        UI.Spacer(),
+                        Spacer(),
                         enableFaceID,
                         enableFaceIDLabel,
-                        UI.Spacer(),
+                        Spacer(),
                     ]
                 },
-                UI.Spacer(),
+                Spacer(),
                 login,
                 forgot,
                 toggle,
