@@ -75,6 +75,7 @@ class ViewController: UIViewController {
         .foregroundColor(.white)
         .cornerRadius(10)
         .padding(.horizontal, 20)
+		.frame(height: 40, width: 100)
         
         let forgot = Button("Forgot Password?") { _ in
             let alert = Alert(title: "Forgot", message: "Try to remember!", dismissButton: "OK")

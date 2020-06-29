@@ -62,14 +62,8 @@ extension UIView {
     
     @discardableResult
     func frame(height: CGFloat = -1, width: CGFloat = -1) -> Self {
-        var frame = self.frame
-        if height >= 0 {
-            frame.size.height = height
-        }
-        if width >= 0 {
-            frame.size.width = width
-        }
-        self.frame = frame
+		self.widthAnchor.constraint(equalToConstant: width).isActive = true
+		self.heightAnchor.constraint(equalToConstant: height).isActive = true
         return self
     }
     
