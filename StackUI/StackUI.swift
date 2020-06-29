@@ -10,20 +10,27 @@ import UIKit
 
 /// StackUI
 ///
-/// A SwiftUI-like set of wrappers that approximate SwiftUI for emperical uses
+/// A SwiftUI-like API for UIKit to allow progressive adoption of SwiftUI
 ///
-/// Architecture:
-/// - Enable piecemeal adoption of SwiftUI paradigms
-/// - Prefer extensions to subclassing to avoid imposing new base view types
-///   - In hindsight, this is too simplistic, we will need to subclass
-///   - List view could not be made to fit this pattern
-/// - Avoid non-SwiftUI naming conventions to minimize collisions with adopter use cases
-/// - Relying on extensions limits adding properties so rely on objc_getAssociatedObject / objc_setAssociatedObject
+/// SwiftUI Style
+/// - uses a "call chaining" -like pattern
+/// - no setter/getter patterns
+/// - inline declarations
 ///
-/// Style:
-/// - SwiftUI uses a "call chaining" pattern, although a misnomer, as declarative syntax
-/// - SwiftUI eschews setter/getter patterns
+/// TODO
+/// - Form - UITableView with sections?
+/// - Picker - pickerStyle(.radioGroup)
+/// - Divider
+/// - Environment
+/// - colorScheme - .dark : .light
+/// - contentSize - .large : .axLarge : .small
+/// - locale - en_US
+/// - NavigationView / NavigationLink
 ///
+/// FIX
+/// - View property "chained" calls propagate based on the call order and the nesting order
+///
+
 
 /// SwiftUI style alignment specifiers
 enum UIAlignment: Int {
@@ -35,6 +42,8 @@ enum UIAlignment: Int {
     case trailing
     case all
 }
+
+// MARK: extensions
 
 /// SwiftUI extensions on UIView
 extension UIView {
@@ -76,6 +85,44 @@ extension UIView {
 
 /// SwiftUI extensions on UIView padding
 extension UIView {
+    // viewBuilder
+    var views: [UIView] {
+        get {
+			self.subviews
+        }
+        set(views) {
+            views.forEach{ view in
+				self.addSubview(view)
+            }
+        }
+    }
+
+    @discardableResult
+    func constrain(_ alignment: UIAlignment, superview: UIView) -> Self {
+        switch alignment {
+        case .vertical:
+            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
+            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
+        case .horizontal:
+            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
+            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
+        case .bottom:
+            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
+        case .leading:
+            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
+        case .top:
+            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
+        case .trailing:
+            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
+        case .all:
+            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
+            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
+            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
+            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
+        }
+        return self
+    }
+
     @discardableResult
     func padding(_ axis: UIAlignment, _ inset: CGFloat) -> Self {
         var insets = self.layoutMargins
@@ -288,7 +335,7 @@ extension UITextView {
 /// SwiftUI extensions on UIStackView
 extension UIStackView {
     // viewBuilder
-    var views: [UIView] {
+    var build: [UIView] {
         get {
             self.arrangedSubviews
         }
@@ -311,34 +358,49 @@ extension UIStackView {
         self.alignment = alignment
         return self
     }
-    
-    // handle via didMoveToSuperview()
-    @discardableResult
-    func constrain(_ alignment: UIAlignment, superview: UIView) -> Self {
-        switch alignment {
-        case .vertical:
-            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
-            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
-        case .horizontal:
-            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
-            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
-        case .bottom:
-            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
-        case .leading:
-            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
-        case .top:
-            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
-        case .trailing:
-            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
-        case .all:
-            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
-            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
-            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
-            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
+}
+
+/// SwiftUI support for action closures
+extension UIControl {
+    /// Inspect view state for the given UIEvent and return an appropriate UIControl.Event
+    /// - Parameter event: UIEvent to attempt to convert
+    /// - Returns: UIControl.Event
+    func uiEventToControlEvent(_ event: UIEvent) -> UIControl.Event {
+        // non-UIButton actions will typically have a nil UIEvent
+        guard let touch = event.allTouches?.first else {
+            return .primaryActionTriggered
         }
-        return self
+        let isInside = self.bounds.contains(touch.location(in: self))
+        let wasInside = self.bounds.contains(touch.previousLocation(in: self))
+        // let isEdit = self.isKind(of: UITextField.self)
+        // TODO support editting events
+        switch touch.phase {
+        case .began:
+            return touch.tapCount > 1 ? .touchDownRepeat : .touchDown
+        case .moved:
+            switch (wasInside, isInside) {
+            case (true, true):
+                return .touchDragInside
+            case (false, true):
+                return .touchDragEnter
+            case (true, false):
+                return .touchDragExit
+            case (false, false):
+                return .touchDragOutside
+            }
+        case .ended:
+            return isInside ? .touchUpInside : .touchUpOutside
+        case .cancelled:
+            return .touchCancel
+        case .stationary:
+            return .primaryActionTriggered
+        default:
+            return .primaryActionTriggered
+        }
     }
 }
+
+// MARK: list
 
 // SwiftUI style List
 final class List: UITableView {
@@ -384,7 +446,6 @@ final class List: UITableView {
 }
 
 // SwiftUI rename to Coordinator
-// SwiftUI exception (tbd)
 final class ListController: UITableViewController {
     var data: [Any] = []
     let cellId: String = "cell"
@@ -412,49 +473,9 @@ final class ListController: UITableViewController {
     }
 }
 
-/// SwiftUI support for action closures
-extension UIControl {
-    /// Inspect view state for the given UIEvent and return an appropriate UIControl.Event
-    /// - Parameter event: UIEvent to attempt to convert
-    /// - Returns: UIControl.Event
-    func uiEventToControlEvent(_ event: UIEvent) -> UIControl.Event {
-        // non-UIButton actions will typically have a nil UIEvent
-        guard let touch = event.allTouches?.first else {
-            return .primaryActionTriggered
-        }
-        let isInside = self.bounds.contains(touch.location(in: self))
-        let wasInside = self.bounds.contains(touch.previousLocation(in: self))
-        // let isEdit = self.isKind(of: UITextField.self)
-        // TODO support editting events
-        switch touch.phase {
-        case .began:
-            return touch.tapCount > 1 ? .touchDownRepeat : .touchDown
-        case .moved:
-            switch (wasInside, isInside) {
-            case (true, true):
-                return .touchDragInside
-            case (false, true):
-                return .touchDragEnter
-            case (true, false):
-                return .touchDragExit
-            case (false, false):
-                return .touchDragOutside
-            }
-        case .ended:
-            return isInside ? .touchUpInside : .touchUpOutside
-        case .cancelled:
-            return .touchCancel
-        case .stationary:
-            return .primaryActionTriggered
-        default:
-            return .primaryActionTriggered
-        }
-    }
-}
+// MARK: types
 
-// SwiftUI constructors
-
-class Alert: UIAlertController {
+final class Alert: UIAlertController {
 	convenience init(title: String, message: String, dismissButton: String) {
 		self.init(title: title, message: message, preferredStyle: .alert)
         let defaultAction = UIAlertAction(title: dismissButton, style: .default, handler: nil)
@@ -462,21 +483,20 @@ class Alert: UIAlertController {
     }
 }
 	
-class Image: UIImageView {
+final class Image: UIImageView {
     convenience init(_ named: String) {
         let image = UIImage(named: named)
 		self.init(image: image)
     }
 }
 
-class Button: UIButton {
+final class Button: UIButton {
 	var events: [UInt: (UIEvent) -> Void] = [:]
 
-	// TODO needs to support a stack view as the label, most UIControls will have to
-    convenience init(_ title: String, action: @escaping (UIEvent) -> Void) {
+	convenience init(action: @escaping (UIEvent) -> Void, label: () -> String) {
 		self.init(type: .system)
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.setTitle(title, for: .normal)
+        self.setTitle(label(), for: .normal)
         self.event(.touchUpInside, action: action)
     }
 	
@@ -492,7 +512,7 @@ class Button: UIButton {
     }
 }
 
-class Checkbox: UIButton {
+final class Checkbox: UIButton {
 	var events: [UInt: (UIEvent) -> Void] = [:]
 
     convenience init(action: ((Bool) -> Void)? = nil) {
@@ -520,7 +540,7 @@ class Checkbox: UIButton {
     }
 }
 
-class Text: UILabel {
+final class Text: UILabel {
 	convenience init(_ text: String) {
 		self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
@@ -528,7 +548,7 @@ class Text: UILabel {
     }
 }
 
-class TextField: UITextField {
+final class TextField: UITextField {
 	convenience init(_ text: String? = nil) {
 		self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
@@ -536,7 +556,7 @@ class TextField: UITextField {
     }
 }
 
-class SecureField: UITextField {
+final class SecureField: UITextField {
 	convenience init(_ text: String? = nil) {
 		self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
@@ -545,14 +565,14 @@ class SecureField: UITextField {
     }
 }
 
-class Spacer: UIView {
+final class Spacer: UIView {
 	convenience init() {
 		self.init(frame: .zero)
 		self.translatesAutoresizingMaskIntoConstraints = false
     }
 }
 
-class Stepper: UIStepper {
+final class Stepper: UIStepper {
 	var events: [UInt: (UIEvent) -> Void] = [:]
 
 	convenience init(in range: ClosedRange<Double>, action: @escaping (Double) -> Void) {
@@ -577,7 +597,7 @@ class Stepper: UIStepper {
     }
 }
 
-class Toggle: UISwitch {
+final class Toggle: UISwitch {
 	var events: [UInt: (UIEvent) -> Void] = [:]
 
 	convenience init(isOn: Bool, action: @escaping (Bool) -> Void) {
@@ -601,38 +621,83 @@ class Toggle: UISwitch {
     }
 }
 
-class VStack: UIStackView {
-	convenience init(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) {
+// MARK: layout containers
+
+final class VStack: UIStackView {
+	convenience init(alignment: UIStackView.Alignment = .center, _ body: () -> [UIView]) {
 		self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
         self.axis = .vertical
         self.distribution = .fillProportionally
         self.alignment = alignment
-        body(self)
+		body().forEach { view in
+			self.addArrangedSubview(view)
+		}
     }
 }
 
-class HStack: UIStackView {
-	convenience init(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) {
+final class HStack: UIStackView {
+	convenience init(alignment: UIStackView.Alignment = .center, _ body:  () -> [UIView]) {
 		self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
         self.axis = .horizontal
         self.distribution = .fillProportionally
         self.alignment = alignment
-        body(self)
+		body().forEach { view in
+			self.addArrangedSubview(view)
+		}
     }
 }
 
-class ZStack: UIStackView {
-	convenience init(alignment: UIStackView.Alignment = .center, body: (UIStackView) -> Void) {
+final class ZStack: UIStackView {
+	convenience init(alignment: UIStackView.Alignment = .center, _ body: () -> [UIView]) {
 		self.init()
 		self.translatesAutoresizingMaskIntoConstraints = false
 		self.axis = .horizontal
 		self.distribution = .fillEqually
 		self.alignment = alignment
-		body(self)
+		body().forEach { view in
+			self.addArrangedSubview(view)
+		}
 	}
 }
+
+// MARK: view
+
+class View: UIView {
+	convenience init(_ body: (() -> [UIView])?) {
+		self.init(frame: .zero)
+		self.translatesAutoresizingMaskIntoConstraints = false
+		body?().forEach { view in
+			self.addSubview(view)
+		}
+	}
+
+	convenience init() {
+		self.init(frame: .zero)
+		self.translatesAutoresizingMaskIntoConstraints = false
+		if let view = self.body() {
+			self.addSubview(view)
+		}
+//		self.add
+//		views.forEach { view in
+//			self.addSubview(view)
+//		}
+	}
+
+//	var bodyImpl: (() -> [UIView])?
+	func body() -> UIView? {
+		return nil
+	}
+	
+//	override func didMoveToSuperview() {
+//		guard let superview = self.superview else { return }
+//		self.heightAnchor.constraint(equalTo: superview.layoutMarginsGuide.heightAnchor).isActive = true
+//		self.widthAnchor.constraint(equalTo: superview.layoutMarginsGuide.widthAnchor).isActive = true
+//	}
+}
+
+// MARK: observable
 
 class ObservedObject<T>: NSObject {
 	@objc dynamic var value: Any?
@@ -651,17 +716,3 @@ class ObservedObject<T>: NSObject {
 		// called prior to rendering
 	}
 }
-
-
-    // TODO
-    
-    // Form - UITableView with sections?
-    // Picker - pickerStyle(.radioGroup)
-    // Divider
-    // Environment
-    // - colorScheme - .dark : .light
-    // - contentSize - .large : .axLarge : .small
-    // - locale - en_US
-    // NavigationView / NavigationLink
-    
-    // View property "chained" calls propagate based on the call order and the nesting order

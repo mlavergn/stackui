@@ -14,7 +14,9 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
 
-        let view = demoStackUI()
+//		let view = demoView()
+//		let view = demoStackUISimple()
+		let view = demoStackUI()
         self.view.addSubview(view)
         view.constrain(.all, superview: self.view)
     }
@@ -38,7 +40,28 @@ class ViewController: UIViewController {
         return stack
     }
 
-    func demoStackUI() -> UIStackView {
+	func demoStackUISimple() -> UIView {
+		class SwiftUIView: View {
+			private var myBinding = false
+			override func body() -> UIView {
+				VStack {[
+					HStack {[
+						Button(action: { event in
+							print(self.myBinding)
+						}, label: {
+							"OK"
+						})
+						.frame(height: 100, width: 40),
+						Spacer()
+					]},
+					Spacer()
+				]}
+			}
+		}
+		return SwiftUIView()
+	}
+	
+    func demoStackUI() -> UIView {
         let usernameLabel = Text("Email").font(.caption1)
         let username = TextField()
             .placeholderText("Email")
@@ -65,22 +88,26 @@ class ViewController: UIViewController {
         }
         let enableFaceIDLabel = Text("Enable Face ID").font(.caption1)
 
-        let login = Button("Sign In") { _ in
+		let login = Button(action: { _ in
             let usernameText = username.text ?? ""
             let passwordText = password.text ?? ""
             let json = "{\"username\":\"\(usernameText)\",\"password\":\"\(passwordText)\"}"
             print(json)
-        }
+		}, label: {
+			"Sign In"
+		})
         .background(.lightGray)
         .foregroundColor(.white)
         .cornerRadius(10)
         .padding(.horizontal, 20)
 		.frame(height: 40, width: 100)
         
-        let forgot = Button("Forgot Password?") { _ in
+		let forgot = Button(action: { _ in
             let alert = Alert(title: "Forgot", message: "Try to remember!", dismissButton: "OK")
             self.present(alert, animated: true, completion: nil)
-        }
+		}, label: {
+			"Forgot Password?"
+		})
         .foregroundColor(.blue)
         .padding()
 
@@ -94,42 +121,35 @@ class ViewController: UIViewController {
         
         let list = List(["hello", "world", "demo", "test", "foo", "bar"] as [AnyObject])
         list.ForEach { data in
-            return HStack { body in
-                body.views = [
-                    Text(data as? String ?? "").font(.subheadline).foregroundColor(.blue)
-                ]
-            }
+            return HStack {[
+				Text(data as? String ?? "").font(.subheadline).foregroundColor(.blue)
+            ]}
         }
 
-        let view = VStack { body in
-            body.views = [
-                usernameLabel,
-                username,
-                Spacer(),
-                passwordLabel,
-                password,
-                Spacer(),
-                HStack { body in
-                    body.views = [
-                        showPassword,
-                        showPasswordLabel,
-                        Spacer(),
-                        enableFaceID,
-                        enableFaceIDLabel,
-                        Spacer(),
-                    ]
-                },
-                Spacer(),
-                login,
-                forgot,
-                toggle,
-                stepper,
-                list,
-            ]
-        }.padding()
-        
-        return view
+		return View {[
+			VStack {[
+				usernameLabel,
+				username,
+				Spacer(),
+				passwordLabel,
+				password,
+				Spacer(),
+				HStack {[
+					showPassword,
+					showPasswordLabel,
+					Spacer(),
+					enableFaceID,
+					enableFaceIDLabel,
+					Spacer(),
+				]},
+				Spacer(),
+				login,
+				forgot,
+				toggle,
+				stepper,
+				list,
+			]}.padding()
+		]}
     }
-
 }
 
