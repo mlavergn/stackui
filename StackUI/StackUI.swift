@@ -31,9 +31,12 @@ import UIKit
 /// - View property "chained" calls propagate based on the call order and the nesting order
 ///
 
+public struct StackUI {
+    let version: String = "0.0.1"
+}
 
 /// SwiftUI style alignment specifiers
-enum UIAlignment: Int {
+public enum Alignment: Int {
     case vertical
     case horizontal
     case bottom
@@ -48,7 +51,7 @@ enum UIAlignment: Int {
 /// SwiftUI extensions on UIView
 extension UIView {
     @discardableResult
-    func background(_ color: UIColor, cornerRadius radius: CGFloat? = nil) -> Self {
+    public func background(_ color: UIColor, cornerRadius radius: CGFloat? = nil) -> Self {
         self.backgroundColor = color
         if let radius = radius {
             self.cornerRadius(radius)
@@ -57,27 +60,27 @@ extension UIView {
     }
 
     @discardableResult
-    func clipped() -> Self {
+    public func clipped() -> Self {
         self.clipsToBounds = true
         return self
     }
 
     @discardableResult
-    func cornerRadius(_ radius: CGFloat) -> Self {
+    public func cornerRadius(_ radius: CGFloat) -> Self {
         self.layer.cornerRadius = radius
         self.layer.masksToBounds = true
         return self
     }
-    
+
     @discardableResult
-    func frame(height: CGFloat = -1, width: CGFloat = -1) -> Self {
-		self.widthAnchor.constraint(equalToConstant: width).isActive = true
-		self.heightAnchor.constraint(equalToConstant: height).isActive = true
+    public func frame(height: CGFloat = -1, width: CGFloat = -1) -> Self {
+        self.widthAnchor.constraint(equalToConstant: width).isActive = true
+        self.heightAnchor.constraint(equalToConstant: height).isActive = true
         return self
     }
-    
+
     @discardableResult
-    func opacity(_ opacity: Float) -> Self {
+    public func opacity(_ opacity: Float) -> Self {
         self.layer.opacity = opacity
         return self
     }
@@ -88,17 +91,17 @@ extension UIView {
     // viewBuilder
     var views: [UIView] {
         get {
-			self.subviews
+            self.subviews
         }
         set(views) {
             views.forEach{ view in
-				self.addSubview(view)
+                self.addSubview(view)
             }
         }
     }
 
     @discardableResult
-    func constrain(_ alignment: UIAlignment, superview: UIView) -> Self {
+    public func constrain(_ alignment: Alignment, superview: UIView) -> Self {
         switch alignment {
         case .vertical:
             self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
@@ -124,7 +127,7 @@ extension UIView {
     }
 
     @discardableResult
-    func padding(_ axis: UIAlignment, _ inset: CGFloat) -> Self {
+    public func padding(_ axis: Alignment, _ inset: CGFloat) -> Self {
         var insets = self.layoutMargins
         switch axis {
         case .horizontal:
@@ -152,20 +155,20 @@ extension UIView {
     }
 
     @discardableResult
-    func padding(_ insets: UIEdgeInsets) -> Self {
+    public func padding(_ insets: UIEdgeInsets) -> Self {
         self.layoutMargins = insets
         return self
     }
 
     @discardableResult
-    func padding(_ inset: CGFloat) -> Self {
+    public func padding(_ inset: CGFloat) -> Self {
         let insets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
         self.layoutMargins = insets
         return self
     }
 
     @discardableResult
-    func padding() -> Self {
+    public func padding() -> Self {
         let insets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
         self.layoutMargins = insets
         return self
@@ -175,19 +178,19 @@ extension UIView {
 /// SwiftUI extensions on UIButton
 extension UIButton {
     @discardableResult
-    func font(_ font: UIFont) -> Self {
+    public func font(_ font: UIFont) -> Self {
         self.titleLabel?.font = font
         return self
     }
-    
+
     @discardableResult
-    func font(_ style: UIFont.TextStyle) -> Self {
+    public func font(_ style: UIFont.TextStyle) -> Self {
         self.titleLabel?.font = UIFont.preferredFont(forTextStyle: style)
         return self
     }
-    
+
     @discardableResult
-    func foregroundColor(_ color: UIColor) -> Self {
+    public func foregroundColor(_ color: UIColor) -> Self {
         self.titleLabel?.textColor = color
         return self
     }
@@ -196,31 +199,31 @@ extension UIButton {
 /// SwiftUI extensions on UITextView
 extension UILabel {
     @discardableResult
-    func alignment(_ alignment: NSTextAlignment) -> Self {
+    public func alignment(_ alignment: NSTextAlignment) -> Self {
         self.textAlignment = alignment
         return self
     }
 
     @discardableResult
-    func font(_ font: UIFont) -> Self {
+    public func font(_ font: UIFont) -> Self {
         self.font = font
         return self
     }
-    
+
     @discardableResult
-    func font(_ style: UIFont.TextStyle) -> Self {
+    public func font(_ style: UIFont.TextStyle) -> Self {
         self.font = UIFont.preferredFont(forTextStyle: style)
         return self
     }
 
     @discardableResult
-    func foregroundColor(_ color: UIColor) -> Self {
+    public func foregroundColor(_ color: UIColor) -> Self {
         self.textColor = color
         return self
     }
 
     @discardableResult
-    func lineLimit(_ lines: Int) -> Self {
+    public func lineLimit(_ lines: Int) -> Self {
         self.numberOfLines = lines
         return self
     }
@@ -229,19 +232,19 @@ extension UILabel {
 /// SwiftUI extensions on UITextField
 extension UITextField {
     @discardableResult
-    func alignment(_ alignment: NSTextAlignment) -> Self {
+    public func alignment(_ alignment: NSTextAlignment) -> Self {
         self.textAlignment = alignment
         return self
     }
-   
+
     @discardableResult
-    func autocapitalization(_ type: UITextAutocapitalizationType) -> Self {
+    public func autocapitalization(_ type: UITextAutocapitalizationType) -> Self {
         self.autocapitalizationType = type
         return self
     }
 
     @discardableResult
-    func clears(_ clears: Bool) -> Self {
+    public func clears(_ clears: Bool) -> Self {
         self.clearsOnBeginEditing = clears
         return self
     }
@@ -403,7 +406,7 @@ extension UIControl {
 // MARK: list
 
 // SwiftUI style List
-final class List: UITableView {
+public final class List: UITableView {
     var controller: ListController?
     var cellHandler: (Any) -> UIView = { _ in
         return UIView()
@@ -412,7 +415,7 @@ final class List: UITableView {
     init(_ data: [AnyObject]) {
         super.init(frame: .zero, style: .plain)
         self.translatesAutoresizingMaskIntoConstraints = false
-        
+
         let listController = ListController()
         listController.data = data
         self.dataSource = listController
@@ -421,7 +424,7 @@ final class List: UITableView {
         // created the controller, so hold a reference
         controller = listController
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -431,16 +434,17 @@ final class List: UITableView {
         cellHandler = handler
         return self
     }
-    
+
     /// UIStackViews compress scrollviews, so re-anchor once added as a subview
-    override func didMoveToSuperview() {
+    override public func didMoveToSuperview() {
+        super.didMoveToSuperview()
         if let superview = self.superview {
             self.widthAnchor.constraint(equalTo: superview.layoutMarginsGuide.widthAnchor).isActive = true
         }
     }
 
     /// map the optimal intrinsic size to the content size
-    override var intrinsicContentSize: CGSize {
+    override public var intrinsicContentSize: CGSize {
         return contentSize
     }
 }
@@ -449,7 +453,7 @@ final class List: UITableView {
 final class ListController: UITableViewController {
     var data: [Any] = []
     let cellId: String = "cell"
-    
+
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
     }
@@ -457,11 +461,11 @@ final class ListController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return data.count
     }
-    
+
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // bridge back
     }
-    
+
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellId, for: indexPath)
         if let list = tableView as? List {
@@ -475,48 +479,67 @@ final class ListController: UITableViewController {
 
 // MARK: types
 
-final class Alert: UIAlertController {
-	convenience init(title: String, message: String, dismissButton: String) {
-		self.init(title: title, message: message, preferredStyle: .alert)
+public final class Alert: UIAlertController {
+    public convenience init(title: String, message: String? = nil, dismissButton: String = "OK") {
+        let messageText = message ?? title
+        let titleText = message == nil ? "" : title
+        self.init(title: titleText, message: messageText, preferredStyle: .alert)
         let defaultAction = UIAlertAction(title: dismissButton, style: .default, handler: nil)
         self.addAction(defaultAction)
     }
 }
-	
-final class Image: UIImageView {
-    convenience init(_ named: String) {
+
+public final class Image: UIImageView {
+    public convenience init(_ named: String) {
         let image = UIImage(named: named)
-		self.init(image: image)
+        self.init(image: image)
     }
 }
 
-final class Button: UIButton {
-	var events: [UInt: (UIEvent) -> Void] = [:]
+public final class Button: UIButton {
+    var events: [UInt: (UIEvent) -> Void] = [:]
 
-	convenience init(action: @escaping (UIEvent) -> Void, label: () -> String) {
-		self.init(type: .system)
+    public convenience init(action: @escaping (UIEvent) -> Void, label: () -> [UIView]) {
+        self.init(type: .system)
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.setTitle(label(), for: .normal)
+        label().forEach { view in
+            if let text = view as? Text<String> {
+                self.setTitle(text.value, for: .normal)
+            }
+        }
         self.event(.touchUpInside, action: action)
     }
-	
-    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+
+    public func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
         events[event.rawValue] = action
         self.addTarget(self, action: #selector(handler), for: event)
     }
-	
+
     @objc
     func handler(_ sender: UIControl, forEvent event: UIEvent) {
         let controlEvent = uiEventToControlEvent(event)
-		events[controlEvent.rawValue]?(event)
+        events[controlEvent.rawValue]?(event)
+    }
+    
+    public func alert(isPresented: StateValue<Bool>, _ value: @escaping () -> Alert) -> Self {
+        isPresented.observe(self) { isPresented in
+            if isPresented.value {
+                guard let vc = UIApplication.shared.keyWindow?.rootViewController else {
+                    return
+                }
+                vc.show(value(), sender: nil)
+                isPresented.value = false
+            }
+        }
+        return self
     }
 }
 
-final class Checkbox: UIButton {
-	var events: [UInt: (UIEvent) -> Void] = [:]
+public final class Checkbox: UIButton {
+    var events: [UInt: (UIEvent) -> Void] = [:]
 
-    convenience init(action: ((Bool) -> Void)? = nil) {
-		self.init()
+    public convenience init(action: ((Bool) -> Void)? = nil) {
+        self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
         self.frame(height: 44, width: 44)
         self.setImage(UIImage(named: "checkbox-off"), for: .normal)
@@ -528,191 +551,275 @@ final class Checkbox: UIButton {
         self.isSelected = false
     }
 
-    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+    public func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
         events[event.rawValue] = action
         self.addTarget(self, action: #selector(handler), for: event)
     }
-	
+
     @objc
     func handler(_ sender: UIControl, forEvent event: UIEvent) {
         let controlEvent = uiEventToControlEvent(event)
-		events[controlEvent.rawValue]?(event)
+        events[controlEvent.rawValue]?(event)
     }
 }
 
-final class Text: UILabel {
-	convenience init(_ text: String) {
-		self.init()
+public class Text<T>: UILabel {
+    var stateValue: StateValue<T>
+    var setter: (() -> String)?
+
+    public init(_ stateValue: StateValue<T>, value: @escaping () -> String) {
+        self.stateValue = stateValue
+        self.setter = value
+        super.init(frame: .zero)
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.text = text
+        self.text = value()
+        self.stateValue.observe(self) { _ in
+            self.text = value()
+        }
+    }
+
+    public convenience init(_ value: T) {
+        self.init(StateValue(value), value: { "\(value)" })
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public var value: T {
+        return stateValue.value
     }
 }
 
-final class TextField: UITextField {
-	convenience init(_ text: String? = nil) {
-		self.init()
+public final class TextField: UITextField, UITextFieldDelegate {
+    var stateValue = StateValue("")
+    public convenience init(_ placeholder: String? = nil, text: StateValue<String>) {
+        self.init()
+        self.stateValue = text
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.text = text
+        self.placeholder = placeholder
+        self.text = text.value
+        self.delegate = self
+        self.stateValue.observe(self) { _ in
+            self.text = self.stateValue.value
+        }
+    }
+
+    public func textFieldDidEndEditing(_ textField: UITextField) {
+        self.stateValue.value = textField.text ?? ""
     }
 }
 
-final class SecureField: UITextField {
-	convenience init(_ text: String? = nil) {
-		self.init()
+public final class SecureField: UITextField, UITextFieldDelegate {
+    var stateValue = StateValue("")
+    public convenience init(_ placeholder: String? = nil, text: String) {
+        self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
         self.isSecureTextEntry = true
+        self.placeholder = placeholder
         self.text = text
+        self.delegate = self
+    }
+
+    public func textFieldDidEndEditing(_ textField: UITextField) {
+        self.stateValue.value = textField.text ?? ""
     }
 }
 
-final class Spacer: UIView {
-	convenience init() {
-		self.init(frame: .zero)
-		self.translatesAutoresizingMaskIntoConstraints = false
+public final class Stepper: UIStepper {
+    var events: [UInt: (UIEvent) -> Void] = [:]
+    var stateValue: StateValue<Double> = StateValue(0.0)
+
+    public convenience init(_ text: String, value: StateValue<Double>, in range: ClosedRange<Double>, action: (() -> Void)? = nil) {
+        self.init(value: value, in: range, action: action)
+        self.stateValue = value
+        self.event(.touchUpInside) { _ in
+            self.stateValue.value = self.value
+        }
     }
-}
 
-final class Stepper: UIStepper {
-	var events: [UInt: (UIEvent) -> Void] = [:]
-
-	convenience init(in range: ClosedRange<Double>, action: @escaping (Double) -> Void) {
-		self.init()
+    public convenience init(value: StateValue<Double>, in range: ClosedRange<Double>, action: (() -> Void)? = nil) {
+        self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
         self.minimumValue = range.lowerBound
         self.maximumValue = range.upperBound
         self.event(.primaryActionTriggered) { _ in
-            action(self.value)
+            action?()
         }
     }
-	
+
     func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
-        events[event.rawValue] = action
-        self.addTarget(self, action: #selector(handler), for: event)
+            events[event.rawValue] = action
+            self.addTarget(self, action: #selector(handler), for: event)
     }
-	
     @objc
     func handler(_ sender: UIControl, forEvent event: UIEvent) {
         let controlEvent = uiEventToControlEvent(event)
-		events[controlEvent.rawValue]?(event)
+        events[controlEvent.rawValue]?(event)
     }
 }
 
-final class Toggle: UISwitch {
-	var events: [UInt: (UIEvent) -> Void] = [:]
+public final class Toggle: UISwitch {
+    var events: [UInt: (UIEvent) -> Void] = [:]
+    public var stateValue = StateValue<Bool>(false)
 
-	convenience init(isOn: Bool, action: @escaping (Bool) -> Void) {
-		self.init()
+    public convenience init(isOn stateValue: StateValue<Bool>, action: (() -> Void)? = nil, _ subviews: (() -> [UIView])? = nil) {
+        self.init(frame: .zero)
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.isOn = isOn
+        self.stateValue = stateValue
+        self.isOn = self.stateValue.value
         self.event(.primaryActionTriggered) { _ in
-            action(self.isOn)
+            self.stateValue.value = self.isOn
         }
     }
-	
-    func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
+
+    public func disabled(_ observe: StateValue<Bool>) -> Self {
+        self.isEnabled = observe.value
+        return self
+    }
+
+    public func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
         events[event.rawValue] = action
         self.addTarget(self, action: #selector(handler), for: event)
     }
-	
+
     @objc
     func handler(_ sender: UIControl, forEvent event: UIEvent) {
         let controlEvent = uiEventToControlEvent(event)
-		events[controlEvent.rawValue]?(event)
+        events[controlEvent.rawValue]?(event)
     }
 }
+
+// MARK: layout helpers
+
+public final class Divider: UIView {
+    public convenience init() {
+        self.init(frame: .zero)
+        self.translatesAutoresizingMaskIntoConstraints = false
+        self.frame(height: 1.0, width: 320.0)
+        self.backgroundColor = .black
+    }
+}
+
+public final class Spacer: UIView {
+    public convenience init() {
+        self.init(frame: .zero)
+        self.translatesAutoresizingMaskIntoConstraints = false
+    }
+}
+
 
 // MARK: layout containers
 
-final class VStack: UIStackView {
-	convenience init(alignment: UIStackView.Alignment = .center, _ body: () -> [UIView]) {
-		self.init()
+public class Stack: UIStackView {
+    public convenience init(alignment: UIStackView.Alignment = .center, spacing: CGFloat = 0, body: () -> [UIView]) {
+        self.init()
         self.translatesAutoresizingMaskIntoConstraints = false
+        self.distribution = .fillProportionally
+        self.alignment = alignment
+        body().forEach { view in
+            self.addArrangedSubview(view)
+            if spacing != 0 {
+                view.padding(spacing)
+            }
+        }
+    }
+}
+
+public final class VStack: Stack {
+    public convenience init(alignment: UIStackView.Alignment = .center, spacing: CGFloat = 0, _ body: () -> [UIView]) {
+        self.init(alignment: alignment, spacing: spacing, body: body)
         self.axis = .vertical
-        self.distribution = .fillProportionally
-        self.alignment = alignment
-		body().forEach { view in
-			self.addArrangedSubview(view)
-		}
     }
 }
 
-final class HStack: UIStackView {
-	convenience init(alignment: UIStackView.Alignment = .center, _ body:  () -> [UIView]) {
-		self.init()
-        self.translatesAutoresizingMaskIntoConstraints = false
+public final class HStack: Stack {
+    public convenience init(alignment: UIStackView.Alignment = .center, spacing: CGFloat = 0, _ body:  () -> [UIView]) {
+        self.init(alignment: alignment, spacing: spacing, body: body)
         self.axis = .horizontal
-        self.distribution = .fillProportionally
-        self.alignment = alignment
-		body().forEach { view in
-			self.addArrangedSubview(view)
-		}
     }
 }
 
-final class ZStack: UIStackView {
-	convenience init(alignment: UIStackView.Alignment = .center, _ body: () -> [UIView]) {
-		self.init()
-		self.translatesAutoresizingMaskIntoConstraints = false
-		self.axis = .horizontal
-		self.distribution = .fillEqually
-		self.alignment = alignment
-		body().forEach { view in
-			self.addArrangedSubview(view)
-		}
-	}
+public final class ZStack: Stack {
+    public convenience init(alignment: UIStackView.Alignment = .center, spacing: CGFloat = 0, _ body: () -> [UIView]) {
+        self.init(alignment: alignment, spacing: spacing, body: body)
+        self.axis = .horizontal
+        self.distribution = .fillEqually
+    }
 }
 
 // MARK: view
 
-class View: UIView {
-	convenience init(_ body: (() -> [UIView])?) {
-		self.init(frame: .zero)
-		self.translatesAutoresizingMaskIntoConstraints = false
-		body?().forEach { view in
-			self.addSubview(view)
-		}
-	}
+open class View: UIView {
+    public init() {
+        super.init(frame: .zero)
+        self.translatesAutoresizingMaskIntoConstraints = false
+        if let view = self.body() {
+            self.addSubview(view)
+        }
+    }
 
-	convenience init() {
-		self.init(frame: .zero)
-		self.translatesAutoresizingMaskIntoConstraints = false
-		if let view = self.body() {
-			self.addSubview(view)
-		}
-//		self.add
-//		views.forEach { view in
-//			self.addSubview(view)
-//		}
-	}
+    required public init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-//	var bodyImpl: (() -> [UIView])?
-	func body() -> UIView? {
-		return nil
-	}
-	
-//	override func didMoveToSuperview() {
-//		guard let superview = self.superview else { return }
-//		self.heightAnchor.constraint(equalTo: superview.layoutMarginsGuide.heightAnchor).isActive = true
-//		self.widthAnchor.constraint(equalTo: superview.layoutMarginsGuide.widthAnchor).isActive = true
-//	}
+    open func body() -> UIView? {
+        return nil
+    }
+
+    override open func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        guard let superview = self.superview else { return }
+        self.heightAnchor.constraint(equalTo: superview.layoutMarginsGuide.heightAnchor).isActive = true
+        self.widthAnchor.constraint(equalTo: superview.layoutMarginsGuide.widthAnchor).isActive = true
+    }
 }
 
-// MARK: observable
+// MARK: observables
 
-class ObservedObject<T>: NSObject {
-	@objc dynamic var value: Any?
+public class StateValue<T>: CustomStringConvertible {
 
-	var wrappedValue: T? {
-		didSet {
-			self.value = wrappedValue
-		}
-	}
-	
-	func projectedValue(_ handler: @escaping (ObservedObject<T>, NSKeyValueObservedChange<Any?>) -> Void) -> NSKeyValueObservation? {
-		return observe(\.self.value, options: [.old, .new], changeHandler: handler)
-	}
-	
-	func update() {
-		// called prior to rendering
-	}
+    var observers: [AnyHashable: (StateValue<T>) -> Void] = [:]
+
+    public var value: T {
+        didSet(value) {
+            self.observers.forEach { kv in
+                kv.value(self)
+            }
+        }
+    }
+
+    public init(_ value: T) {
+        self.value = value
+    }
+
+    public func observe(_ observer: AnyHashable, callback: @escaping (StateValue<T>) -> Void) {
+        self.observers[observer] = callback
+    }
+
+    public var description: String {
+        return "\(self.value)"
+    }
+}
+
+/// Not functional
+/// KVO may be avoided
+/// ObservedObject wrapper
+public class ObservedObject<T>: NSObject {
+    @objc
+    public dynamic var value: Any?
+
+    public var wrappedValue: T? {
+        didSet {
+            self.value = wrappedValue
+        }
+    }
+
+    public func projectedValue(_ handler: @escaping (ObservedObject<T>, NSKeyValueObservedChange<Any?>) -> Void) -> NSKeyValueObservation? {
+        return observe(\.self.value, options: [.old, .new], changeHandler: handler)
+    }
+
+    public func update() {
+        // called prior to rendering
+    }
 }
