@@ -41,33 +41,34 @@ class ViewController: UIViewController {
         return stack
     }
 
-    func demoStackUIPort() -> View {
-        class Demo: View {
-            private var toggleEnabled = StateValue(false)
-            private var step: StateValue<Double> = StateValue(0)
-            private var text = StateValue("")
-            private var buttonActive = StateValue(true)
-            private var showAlert = StateValue(false)
+    func demoStackUIPort() -> SView {
+        class Demo: SView {
+            private var toggleEnabled = SState(false)
+            private var step: SState<Double> = SState(0)
+            private var text = SState("")
+            private var buttonActive = SState(true)
+            private var showAlert = SState(false)
 
             override func body() -> UIView {
-                VStack(alignment: .leading) {[
-                    Toggle(isOn: toggleEnabled, {[
-                        Text("Toggle")
+                SVStack(alignment: .leading) {[
+                    SToggle(isOn: toggleEnabled, {[
+                        SText("Toggle")
                     ]}),
-                    Text(toggleEnabled, value: {"Toggle: \(self.toggleEnabled.value ? "ok" : "nok")"}),
-                    Divider(),
-                    Stepper("Click", value: step, in: 0...10),
-                    Text(step, value: {"Step: \(self.step)"}),
-                    TextField("Input", text: text),
-                    Text("Text: \(self.text)"),
-                    Button(action: { _ in
-                        self.showAlert.value = true
+                    SText(toggleEnabled, value: {"Toggle: \(self.toggleEnabled.wrappedValue ? "ok" : "nok")"}),
+                    SDivider(),
+                    SStepper("Click", value: step, in: 0...10),
+                    SText(step, value: {"Step: \(self.step)"}),
+                    STextField("Input", text: text),
+                    SText("Text: \(self.text)"),
+                    SButton(action: { _ in
+                        self.showAlert.wrappedValue = true
                     }, label: {[
-                        Text("Tap")
+                        SText("Tap")
                     ]})
                     .alert(isPresented: showAlert) {
-                        Alert(title: "ALERT")
-                    }
+                        SAlert(title: "ALERT")
+                    },
+                    SSpacer()
                 ]}
             }
         }
@@ -76,20 +77,20 @@ class ViewController: UIViewController {
     }
 
     func demoStackUISimple() -> UIView {
-        class SwiftUIView: View {
-            private var myBinding = StateValue(false)
+        class SwiftUIView: SView {
+            private var myBinding = SState(false)
             override func body() -> UIView {
-                VStack {[
-                    HStack {[
-                        Button(action: { _ in
+                SVStack {[
+                    SHStack {[
+                        SButton(action: { _ in
                             print(self.myBinding)
                         }, label: {[
-                            Text("OK")
+                            SText("OK")
                         ]})
                         .frame(height: 100, width: 40),
-                        Spacer()
+                        SSpacer()
                     ]},
-                    Spacer()
+                    SSpacer()
                 ]}
             }
         }
@@ -97,39 +98,39 @@ class ViewController: UIViewController {
     }
 
     func demoStackUI() -> UIView {
-        let usernameLabel = Text("Email").font(.caption1)
-        let username = TextField()
+        let usernameLabel = SText("Email").font(.caption1)
+        let username = STextField()
             .placeholderText("Email")
             .disableAutocorrection(true)
             .autocapitalization(.none)
             .clearButton(.whileEditing)
             .clears(true)
 
-        let passwordLabel = Text("Password").font(.caption1)
-        let password = SecureField()
+        let passwordLabel = SText("Password").font(.caption1)
+        let password = SSecureField()
             .placeholderText("Password")
             .disableAutocorrection(true)
             .autocapitalization(.none)
             .clearButton(.whileEditing)
             .clears(true)
 
-        let showPassword = Checkbox() { _ in
+        let showPassword = SCheckbox() { _ in
             password.secure = !password.secure
         }
-        let showPasswordLabel = Text("Show Password").font(.caption1)
+        let showPasswordLabel = SText("Show Password").font(.caption1)
 
-        let enableFaceID = Checkbox() { selected in
+        let enableFaceID = SCheckbox() { selected in
             print(selected)
         }
-        let enableFaceIDLabel = Text("Enable Face ID").font(.caption1)
+        let enableFaceIDLabel = SText("Enable Face ID").font(.caption1)
 
-        let login = Button(action: { _ in
+        let login = SButton(action: { _ in
             let usernameText = username.text ?? ""
             let passwordText = password.text ?? ""
             let json = "{\"username\":\"\(usernameText)\",\"password\":\"\(passwordText)\"}"
             print(json)
         }, label: {[
-            Text("Sign In")
+            SText("Sign In")
         ]})
         .background(.lightGray)
         .foregroundColor(.white)
@@ -137,48 +138,48 @@ class ViewController: UIViewController {
         .padding(.horizontal, 20)
         .frame(height: 40, width: 100)
 
-        let forgot = Button(action: { _ in
-            let alert = Alert(title: "Forgot", message: "Try to remember!", dismissButton: "OK")
+        let forgot = SButton(action: { _ in
+            let alert = SAlert(title: "Forgot", message: "Try to remember!", dismissButton: "OK")
             self.present(alert, animated: true, completion: nil)
         }, label: {[
-            Text("Forgot Password?")
+            SText("Forgot Password?")
         ]})
         .foregroundColor(.blue)
         .padding()
 
-        let toggle = Toggle(isOn: StateValue(false), action: {
+        let toggle = SToggle(isOn: SState(false), action: {
             print("toggle")
         }) {[
-            Text("Toggle")
+            SText("Toggle")
         ]}
 
-        let stepper = Stepper(value: StateValue(0), in: 1...10) {
+        let stepper = SStepper(value: SState(0), in: 1...10) {
             print("step")
         }
 
-        let list = List(["hello", "world", "demo", "test", "foo", "bar"] as [AnyObject])
+        let list = SList(["hello", "world", "demo", "test", "foo", "bar"] as [AnyObject])
         list.ForEach { data in
-            return HStack {[
-                Text(data as? String ?? "").font(.subheadline).foregroundColor(.blue)
+            return SHStack {[
+                SText(data as? String ?? "").font(.subheadline).foregroundColor(.blue)
             ]}
         }
 
-        return VStack {[
+        return SVStack {[
                 usernameLabel,
                 username,
-                Spacer(),
+                SSpacer(),
                 passwordLabel,
                 password,
-                Spacer(),
-                HStack {[
+                SSpacer(),
+                SHStack {[
                     showPassword,
                     showPasswordLabel,
-                    Spacer(),
+                    SSpacer(),
                     enableFaceID,
                     enableFaceIDLabel,
-                    Spacer(),
+                    SSpacer(),
                 ]},
-                Spacer(),
+                SSpacer(),
                 login,
                 forgot,
                 toggle,
