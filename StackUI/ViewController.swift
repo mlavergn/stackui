@@ -19,7 +19,6 @@ class ViewController: UIViewController {
 //		let view = demoStackUI()
         let view = demoStackUIPort()
         self.view.addSubview(view)
-        view.constrain(.all, superview: self.view)
     }
 
     func demoStackView() -> UIStackView {
@@ -50,7 +49,7 @@ class ViewController: UIViewController {
             private var showAlert = SState(false)
 
             override func body() -> UIView {
-                SVStack(alignment: .leading) {[
+                SVStack(alignment: .leading, spacing: 20) {[
                     SToggle(isOn: toggleEnabled, {[
                         SText("Toggle")
                     ]}),
@@ -59,7 +58,9 @@ class ViewController: UIViewController {
                     SStepper("Click", value: step, in: 0...10),
                     SText(step, value: {"Step: \(self.step)"}),
                     STextField("Input", text: text),
-                    SText("Text: \(self.text)"),
+                    SText(text) { "Text: \(self.text)" }.onTapGesture {
+                        print("ok")
+                    },
                     SButton(action: { _ in
                         self.showAlert.wrappedValue = true
                     }, label: {[
@@ -80,14 +81,15 @@ class ViewController: UIViewController {
         class SwiftUIView: SView {
             private var myBinding = SState(false)
             override func body() -> UIView {
-                SVStack {[
+                SVStack(alignment: .leading) {[
                     SHStack {[
                         SButton(action: { _ in
                             print(self.myBinding)
                         }, label: {[
                             SText("OK")
                         ]})
-                        .frame(height: 100, width: 40),
+                        .frame(height: 100, width: 40)
+                        .background(.red, cornerRadius: 10),
                         SSpacer()
                     ]},
                     SSpacer()
@@ -98,6 +100,9 @@ class ViewController: UIViewController {
     }
 
     func demoStackUI() -> UIView {
+        let showPasswordState = SState(false)
+        let enableFaceIDState = SState(false)
+
         let usernameLabel = SText("Email").font(.caption1)
         let username = STextField()
             .placeholderText("Email")
@@ -114,12 +119,10 @@ class ViewController: UIViewController {
             .clearButton(.whileEditing)
             .clears(true)
 
-        let showPassword = SCheckbox() { _ in
-            password.secure = !password.secure
-        }
+        let showPassword = SCheckbox(showPasswordState)
         let showPasswordLabel = SText("Show Password").font(.caption1)
 
-        let enableFaceID = SCheckbox() { selected in
+        let enableFaceID = SCheckbox(enableFaceIDState) { selected in
             print(selected)
         }
         let enableFaceIDLabel = SText("Enable Face ID").font(.caption1)
@@ -135,7 +138,6 @@ class ViewController: UIViewController {
         .background(.lightGray)
         .foregroundColor(.white)
         .cornerRadius(10)
-        .padding(.horizontal, 20)
         .frame(height: 40, width: 100)
 
         let forgot = SButton(action: { _ in

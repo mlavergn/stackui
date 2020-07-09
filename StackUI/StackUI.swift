@@ -33,6 +33,26 @@ import UIKit
 
 public struct StackUI {
     let version: String = "0.0.1"
+    
+    static var windowScene: UIWindowScene? {
+        return UIApplication.shared.connectedScenes.first { scene in
+            scene.activationState == .foregroundActive
+        } as? UIWindowScene
+    }
+    
+    static var keyWindow: UIWindow? {
+        return Self.windowScene?.windows.first { window in
+            window.isKeyWindow
+        }
+    }
+    
+    static var rootViewController: UIViewController? {
+        return Self.keyWindow?.rootViewController
+    }
+
+    static var presentedViewController: UIViewController? {
+        return Self.rootViewController?.presentedViewController ?? Self.rootViewController
+    }
 }
 
 /// SwiftUI style edge specifiers
@@ -115,17 +135,6 @@ public enum SHorizontalAlignment: Int {
     }
 }
 
-/// TBD
-public enum Alignment: Int {
-    case vertical
-    case horizontal
-    case bottom
-    case leading
-    case top
-    case trailing
-    case all
-}
-
 // MARK: extensions
 
 /// SwiftUI extensions on UIView
@@ -153,7 +162,7 @@ extension UIView {
     }
 
     @discardableResult
-    public func frame(height: CGFloat = -1, width: CGFloat = -1) -> Self {
+    public func frame(height: CGFloat = 0, width: CGFloat = 0) -> Self {
         self.widthAnchor.constraint(equalToConstant: width).isActive = true
         self.heightAnchor.constraint(equalToConstant: height).isActive = true
         return self
@@ -169,56 +178,19 @@ extension UIView {
 /// SwiftUI extensions on UIView padding
 extension UIView {
     @discardableResult
-    public func constrain(_ alignment: Alignment, superview: UIView) -> Self {
-        switch alignment {
-        case .vertical:
-            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
-            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
-        case .horizontal:
-            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
-            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
-        case .bottom:
-            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
-        case .leading:
-            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
-        case .top:
-            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
-        case .trailing:
-            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
-        case .all:
-            self.topAnchor.constraint(equalTo: superview.layoutMarginsGuide.topAnchor).isActive = true
-            self.bottomAnchor.constraint(equalTo: superview.layoutMarginsGuide.bottomAnchor).isActive = true
-            self.leadingAnchor.constraint(equalTo: superview.layoutMarginsGuide.leadingAnchor).isActive = true
-            self.trailingAnchor.constraint(equalTo: superview.layoutMarginsGuide.trailingAnchor).isActive = true
+    func edgesIgnoringSafeArea(_ edge: SEdge) -> Self {
+        if let superview = self.superview {
+            switch edge {
+            case .bottom:
+                self.bottomAnchor.constraint(equalTo: superview.bottomAnchor).isActive = true
+            case .leading:
+                self.leadingAnchor.constraint(equalTo: superview.leadingAnchor).isActive = true
+            case .top:
+                self.topAnchor.constraint(equalTo: superview.topAnchor).isActive = true
+            case .trailing:
+                self.trailingAnchor.constraint(equalTo: superview.trailingAnchor).isActive = true
+            }
         }
-        return self
-    }
-
-    @discardableResult
-    public func padding(_ axis: Alignment, _ inset: CGFloat) -> Self {
-        var insets = self.layoutMargins
-        switch axis {
-        case .horizontal:
-            insets.right = inset
-            insets.left = inset
-        case .vertical:
-            insets.top = inset
-            insets.bottom = inset
-        case .bottom:
-            insets.bottom = inset
-        case .leading:
-            insets.left = inset
-        case .top:
-            insets.top = inset
-        case .trailing:
-            insets.right = inset
-        case .all:
-            insets.right = inset
-            insets.left = inset
-            insets.top = inset
-            insets.bottom = inset
-        }
-        self.layoutMargins = insets
         return self
     }
 
@@ -231,15 +203,13 @@ extension UIView {
     @discardableResult
     public func padding(_ inset: CGFloat) -> Self {
         let insets = UIEdgeInsets(top: inset, left: inset, bottom: inset, right: inset)
-        self.layoutMargins = insets
-        return self
+        return padding(insets)
     }
 
     @discardableResult
     public func padding() -> Self {
         let insets = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
-        self.layoutMargins = insets
-        return self
+        return padding(insets)
     }
 }
 
@@ -353,16 +323,6 @@ extension UITextField {
         return self
     }
 
-    // SwiftUI exception
-    var secure: Bool {
-        get {
-            self.isSecureTextEntry
-        }
-        set(secure) {
-            self.isSecureTextEntry = secure
-        }
-    }
-
     @discardableResult
     func textFieldStyle(_ style: UITextField.BorderStyle) -> Self {
         self.borderStyle = style
@@ -444,7 +404,7 @@ extension UIControl {
         let isInside = self.bounds.contains(touch.location(in: self))
         let wasInside = self.bounds.contains(touch.previousLocation(in: self))
         // let isEdit = self.isKind(of: UITextField.self)
-        // TODO support editting events
+        // TODO support editing events
         switch touch.phase {
         case .began:
             return touch.tapCount > 1 ? .touchDownRepeat : .touchDown
@@ -503,7 +463,6 @@ public final class SList: UITableView {
         return self
     }
 
-    /// UIStackViews compress scrollviews, so re-anchor once added as a subview
     override public func didMoveToSuperview() {
         super.didMoveToSuperview()
         if let superview = self.superview {
@@ -558,15 +517,20 @@ public final class SAlert: UIAlertController {
 }
 
 public final class SImage: UIImageView {
-    public convenience init(_ named: String) {
+    public init(_ named: String) {
         let image = UIImage(named: named)
-        self.init(image: image)
+        super.init(image: image)
         self.translatesAutoresizingMaskIntoConstraints = false
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }
 
 public final class SButton: UIButton {
     var events: [UInt: (UIEvent) -> Void] = [:]
+    var binding: SState<Bool>?
 
     public convenience init(action: @escaping (UIEvent) -> Void, label: () -> [UIView]) {
         self.init(type: .system)
@@ -577,6 +541,11 @@ public final class SButton: UIButton {
             }
         }
         self.event(.touchUpInside, action: action)
+    }
+    
+    deinit {
+        self.events.removeAll()
+        self.binding?.unsubscribe(self)
     }
 
     public func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
@@ -591,12 +560,10 @@ public final class SButton: UIButton {
     }
     
     public func alert(isPresented: SState<Bool>, _ value: @escaping () -> SAlert) -> Self {
-        isPresented.projectedValue(self) { isPresented in
+        self.binding = isPresented
+        self.binding?.projectedValue(self) { isPresented in
             if isPresented.wrappedValue {
-                guard let vc = UIApplication.shared.keyWindow?.rootViewController else {
-                    return
-                }
-                vc.show(value(), sender: nil)
+                StackUI.presentedViewController?.show(value(), sender: nil)
                 isPresented.wrappedValue = false
             }
         }
@@ -606,9 +573,11 @@ public final class SButton: UIButton {
 
 public final class SCheckbox: UIButton {
     var events: [UInt: (UIEvent) -> Void] = [:]
+    var binding: SState<Bool>
 
-    public convenience init(action: ((Bool) -> Void)? = nil) {
-        self.init()
+    public init(_ binding: SState<Bool>, _ action: ((Bool) -> Void)? = nil) {
+        self.binding = binding
+        super.init(frame: .zero)
         self.translatesAutoresizingMaskIntoConstraints = false
         self.widthAnchor.constraint(equalToConstant: 44).isActive = true
         self.heightAnchor.constraint(equalToConstant: 44).isActive = true
@@ -619,6 +588,15 @@ public final class SCheckbox: UIButton {
             action?(self.isSelected)
         }
         self.isSelected = false
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        self.events.removeAll()
+        self.binding.unsubscribe(self)
     }
 
     public func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
@@ -634,17 +612,16 @@ public final class SCheckbox: UIButton {
 }
 
 public class SText<T>: UILabel {
-    var subject: SState<T>
-    var setter: (() -> String)?
+    var events: [UIGestureRecognizer: () -> Void] = [:]
+    var binding: SState<T>
 
-    public init(_ subject: SState<T>, value: @escaping () -> String) {
-        self.subject = subject
-        self.setter = value
+    public init(_ binding: SState<T>, value: (() -> String)? = nil) {
+        self.binding = binding
         super.init(frame: .zero)
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.text = value()
-        self.subject.projectedValue(self) { _ in
-            self.text = value()
+        self.text = value?() ?? ""
+        self.binding.projectedValue(self) { _ in
+            self.text = value?() ?? ""
         }
     }
 
@@ -655,67 +632,113 @@ public class SText<T>: UILabel {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
+    deinit {
+        self.events.removeAll()
+        self.binding.unsubscribe(self)
+    }
+
     public var value: T {
-        return subject.wrappedValue
+        return binding.wrappedValue
+    }
+    
+    public func onTapGesture(_ action: @escaping () -> Void) -> Self {
+        self.isUserInteractionEnabled = true
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handler))
+        self.events[tapGesture] = action
+        self.addGestureRecognizer(tapGesture)
+        return self
+    }
+    
+    @objc
+    func handler(_ sender: UITapGestureRecognizer) {
+        self.events[sender]?()
     }
 }
 
-public final class STextField: UITextField, UITextFieldDelegate {
-    var subject = SState("")
-    public convenience init(_ placeholder: String? = nil, text: SState<String>) {
-        self.init()
-        self.subject = text
+public class STextField: UITextField, UITextFieldDelegate {
+    var events: [UInt: (UIEvent) -> Void] = [:]
+    var binding: SState<String>?
+    
+    public init(_ placeholder: String? = nil, text: SState<String>? = nil) {
+        super.init(frame: .zero)
+        self.binding = text
         self.translatesAutoresizingMaskIntoConstraints = false
         self.placeholder = placeholder
-        self.text = text.wrappedValue
+        self.text = text?.wrappedValue
         self.delegate = self
-        self.subject.projectedValue(self) { _ in
-            self.text = self.subject.wrappedValue
+        self.binding?.projectedValue(self) { _ in
+            self.text = self.binding?.wrappedValue
         }
     }
-
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        self.events.removeAll()
+        self.binding?.unsubscribe(self)
+    }
+    
     public func textFieldDidEndEditing(_ textField: UITextField) {
-        self.subject.wrappedValue = textField.text ?? ""
+        self.binding?.wrappedValue = textField.text ?? ""
+    }
+    
+    public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        self.resignFirstResponder()
+        return true
     }
 }
 
-public final class SSecureField: UITextField, UITextFieldDelegate {
-    var subject = SState("")
-    public convenience init(_ placeholder: String? = nil, text: String) {
-        self.init()
-        self.translatesAutoresizingMaskIntoConstraints = false
+public class SSecureField: STextField {
+    public override init(_ placeholder: String? = nil, text: SState<String>? = nil) {
+        super.init(placeholder, text: text)
         self.isSecureTextEntry = true
-        self.placeholder = placeholder
-        self.text = text
-        self.delegate = self
+        self.autocorrectionType = .no
     }
-
-    public func textFieldDidEndEditing(_ textField: UITextField) {
-        self.subject.wrappedValue = textField.text ?? ""
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public func secure(_ state: SState<Bool>) -> Self {
+        state.projectedValue(self) { state in
+            self.isSecureTextEntry = state.wrappedValue
+        }
+        return self
     }
 }
 
 public final class SStepper: UIStepper {
     var events: [UInt: (UIEvent) -> Void] = [:]
-    var subject: SState<Double> = SState(0.0)
+    var binding: SState<Double> = SState(0.0)
 
     public convenience init(_ text: String, value: SState<Double>, in range: ClosedRange<Double>, action: (() -> Void)? = nil) {
         self.init(value: value, in: range, action: action)
-        self.subject = value
+        self.binding = value
         self.event(.touchUpInside) { _ in
-            self.subject.wrappedValue = self.value
+            self.binding.wrappedValue = self.value
         }
     }
 
-    public convenience init(value: SState<Double>, in range: ClosedRange<Double>, action: (() -> Void)? = nil) {
-        self.init()
+    public init(value: SState<Double>, in range: ClosedRange<Double>, action: (() -> Void)? = nil) {
+        super.init(frame: .zero)
         self.translatesAutoresizingMaskIntoConstraints = false
         self.minimumValue = range.lowerBound
         self.maximumValue = range.upperBound
         self.event(.primaryActionTriggered) { _ in
             action?()
         }
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        self.binding.unsubscribe(self)
+        self.events.removeAll()
     }
 
     func event(_ event: UIControl.Event, action: @escaping (UIEvent) -> Void) {
@@ -731,18 +754,27 @@ public final class SStepper: UIStepper {
 
 public final class SToggle: UISwitch {
     var events: [UInt: (UIEvent) -> Void] = [:]
-    public var subject = SState<Bool>(false)
+    var binding = SState<Bool>(false)
 
-    public convenience init(isOn subject: SState<Bool>, action: (() -> Void)? = nil, _ subviews: (() -> [UIView])? = nil) {
-        self.init(frame: .zero)
+    public init(isOn binding: SState<Bool>, action: (() -> Void)? = nil, _ subviews: (() -> [UIView])? = nil) {
+        super.init(frame: .zero)
         self.translatesAutoresizingMaskIntoConstraints = false
-        self.subject = subject
-        self.isOn = self.subject.wrappedValue
+        self.binding = binding
+        self.isOn = self.binding.wrappedValue
         self.event(.primaryActionTriggered) { _ in
-            self.subject.wrappedValue = self.isOn
+            self.binding.wrappedValue = self.isOn
         }
-            }
-
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        self.binding.unsubscribe(self)
+        self.events.removeAll()
+    }
+    
     public func disabled(_ observe: SState<Bool>) -> Self {
         self.isEnabled = observe.wrappedValue
         return self
@@ -768,7 +800,13 @@ public final class SDivider: UIView {
         self.translatesAutoresizingMaskIntoConstraints = false
         self.backgroundColor = .black
         self.heightAnchor.constraint(equalToConstant: 1.0).isActive = true
-        self.setContentCompressionResistancePriority(.required, for: .vertical)
+    }
+    
+    override public func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        if let superview = self.superview {
+            self.widthAnchor.constraint(equalTo: superview.layoutMarginsGuide.widthAnchor).isActive = true
+        }
     }
 }
 
@@ -776,6 +814,11 @@ public final class SSpacer: UIView {
     public convenience init() {
         self.init(frame: .zero)
         self.translatesAutoresizingMaskIntoConstraints = false
+        // spacer req lowest hugging priority so it is always the stretched view
+        self.setContentHuggingPriority(.defaultLow, for: .vertical)
+        self.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        self.heightAnchor.constraint(greaterThanOrEqualToConstant: 0).isActive = true
+        self.widthAnchor.constraint(greaterThanOrEqualToConstant: 0).isActive = true
     }
 }
 
@@ -789,11 +832,9 @@ public class SStack: UIStackView {
         self.isLayoutMarginsRelativeArrangement = true
         self.distribution = .fill
         self.alignment = alignment
+        self.spacing = spacing
         content().forEach { view in
             self.addArrangedSubview(view)
-            if spacing != 0 {
-                view.padding(spacing)
-            }
         }
     }
     
@@ -862,15 +903,13 @@ open class SView: UIView {
 // MARK: observables
 
 /// State
+/// Observable with concrete value
 public class SState<T>: CustomStringConvertible {
-
     var subscribers: [AnyHashable: (SState<T>) -> Void] = [:]
 
     public var wrappedValue: T {
         didSet(value) {
-            self.subscribers.forEach { kv in
-                kv.value(self)
-            }
+            self.update()
         }
     }
 
@@ -888,7 +927,21 @@ public class SState<T>: CustomStringConvertible {
 
     // called prior to rendering
     public func update() {
-        // NOOP
+        self.subscribers.forEach { kv in
+            kv.value(self)
+        }
+    }
+    
+    public func unsubscribe(_ subscriber: AnyHashable) {
+        self.subscribers.removeValue(forKey: subscriber)
+    }
+}
+
+/// Binding
+/// Observable with a parameterized value
+public class SBinding<T>: SState<T> {
+    public init(_ state: SState<T>) {
+        super.init(state.wrappedValue)
     }
 }
 
